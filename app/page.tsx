@@ -71,33 +71,60 @@ export default function CareerCanvasPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Handle text selection inside editable blocks
-  const handleBlockMouseUp = (
-    targetType: 'summary' | 'experience_bullet' | 'project_highlight',
-    parentId?: string,
-    targetId?: string
-  ) => {
-    const winSel = window.getSelection();
-    if (!winSel || winSel.isCollapsed) {
-      return;
-    }
-    const text = winSel.toString().trim();
-    if (text.length < 3) return;
+  // Global selection listener so dragging slightly outside a block or keyboard selection always works
+  useEffect(() => {
+    const syncSelection = () => {
+      requestAnimationFrame(() => {
+        const winSel = window.getSelection();
+        if (!winSel || winSel.isCollapsed) {
+          setSelection(null);
+          return;
+        }
+        const text = winSel.toString().trim();
+        if (text.length < 2) {
+          setSelection(null);
+          return;
+        }
 
-    const range = winSel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+        const anchor = winSel.anchorNode;
+        const anchorEl =
+          anchor instanceof HTMLElement ? anchor : anchor?.parentElement || null;
+        const editableEl = anchorEl?.closest<HTMLElement>('[data-editable-type]');
+        if (!editableEl) {
+          return;
+        }
 
-    setSelection({
-      text,
-      targetType,
-      parentId,
-      targetId,
-      rect: {
-        top: rect.top,
-        left: rect.left + rect.width / 2,
-      },
-    });
-  };
+        const targetType = editableEl.dataset.editableType as
+          | 'summary'
+          | 'experience_bullet'
+          | 'project_highlight';
+        const parentId = editableEl.dataset.parentId || undefined;
+        const targetId = editableEl.dataset.targetId || undefined;
+
+        const range = winSel.getRangeAt(0);
+        const rawRect = range.getBoundingClientRect();
+        const rect = rawRect.width > 0 ? rawRect : editableEl.getBoundingClientRect();
+
+        setSelection({
+          text,
+          targetType,
+          parentId,
+          targetId,
+          rect: {
+            top: rect.top,
+            left: rect.left + rect.width / 2,
+          },
+        });
+      });
+    };
+
+    document.addEventListener('mouseup', syncSelection);
+    document.addEventListener('keyup', syncSelection);
+    return () => {
+      document.removeEventListener('mouseup', syncSelection);
+      document.removeEventListener('keyup', syncSelection);
+    };
+  }, []);
 
   const handleFormat = (cmd: 'bold' | 'italic' | 'underline') => {
     document.execCommand(cmd, false);
@@ -467,12 +494,12 @@ export default function CareerCanvasPage() {
                     <h1
                       contentEditable
                       suppressContentEditableWarning
-                      onBlur={(e) =>
-                        setProfile((p) => ({
-                          ...p,
-                          fullName: e.currentTarget.textContent || p.fullName,
-                        }))
-                      }
+                      onBlur={(e) => {
+                        const next = e.currentTarget.textContent;
+                        if (next !== null) {
+                          setProfile((p) => ({ ...p, fullName: next || p.fullName }));
+                        }
+                      }}
                       className="text-[26px] sm:text-[28px] font-medium tracking-tight text-neutral-900 leading-tight focus:outline-none"
                     >
                       {profile.fullName}
@@ -480,12 +507,12 @@ export default function CareerCanvasPage() {
                     <p
                       contentEditable
                       suppressContentEditableWarning
-                      onBlur={(e) =>
-                        setProfile((p) => ({
-                          ...p,
-                          headline: e.currentTarget.textContent || p.headline,
-                        }))
-                      }
+                      onBlur={(e) => {
+                        const next = e.currentTarget.textContent;
+                        if (next !== null) {
+                          setProfile((p) => ({ ...p, headline: next || p.headline }));
+                        }
+                      }}
                       className="text-[13px] italic text-neutral-500 mt-0.5 focus:outline-none"
                     >
                       {profile.headline}
@@ -506,13 +533,14 @@ export default function CareerCanvasPage() {
                   <p
                     contentEditable
                     suppressContentEditableWarning
-                    onMouseUp={() => handleBlockMouseUp('summary', undefined, 'summary')}
-                    onBlur={(e) =>
-                      setProfile((p) => ({
-                        ...p,
-                        summary: e.currentTarget.textContent || p.summary,
-                      }))
-                    }
+                    data-editable-type="summary"
+                    data-target-id="summary"
+                    onBlur={(e) => {
+                      const next = e.currentTarget.textContent;
+                      if (next !== null) {
+                        setProfile((p) => ({ ...p, summary: next || p.summary }));
+                      }
+                    }}
                     className="text-[11.5px] leading-[1.65] text-neutral-600 focus:outline-none"
                   >
                     {profile.summary}
@@ -587,14 +615,14 @@ export default function CareerCanvasPage() {
                               <p
                                 contentEditable
                                 suppressContentEditableWarning
+                                data-editable-type="experience_bullet"
+                                data-parent-id={exp.id}
+                                data-target-id={bullet.id}
                                 onClick={() => {
                                   if (topDiag && window.getSelection()?.isCollapsed) {
                                     setActiveDiagId(isDiagOpen ? null : bullet.id);
                                   }
                                 }}
-                                onMouseUp={() =>
-                                  handleBlockMouseUp('experience_bullet', exp.id, bullet.id)
-                                }
                                 onBlur={(e) => {
                                   const updated = e.currentTarget.textContent || bullet.text;
                                   setProfile((p) => ({
