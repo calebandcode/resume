@@ -13,10 +13,15 @@ import {
   Mail,
   MapPin,
   Code2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   CareerProfile,
   INITIAL_PROFILE,
+  CLASSIC_PROFILE,
+  EXECUTIVE_PROFILE,
+  MODERN_PROFILE,
   PendingDiff,
   LinterDiagnostic,
 } from '@/lib/career-types';
@@ -24,12 +29,18 @@ import { runCareerLinter } from '@/lib/linter';
 import { FloatingSelectionPill, SelectionContext } from '@/components/FloatingSelectionPill';
 import { BottomOrbBar } from '@/components/BottomOrbBar';
 import { DiffGhostCard } from '@/components/DiffGhostCard';
+import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
+import { ExecutiveTemplate } from '@/components/templates/ExecutiveTemplate';
+import { ModernTemplate } from '@/components/templates/ModernTemplate';
 
 type ViewMode = 'resume' | 'portfolio';
+type ResumeTemplate = 'minimalist' | 'editorial' | 'executive' | 'modern';
 
 export default function CareerCanvasPage() {
   const [profile, setProfile] = useState<CareerProfile>(INITIAL_PROFILE);
+  const [hasCustomProfile, setHasCustomProfile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('resume');
+  const [resumeTemplate, setResumeTemplate] = useState<ResumeTemplate>('minimalist');
   const [showLinter, setShowLinter] = useState(true);
   const [activeDiagId, setActiveDiagId] = useState<string | null>(null);
 
@@ -58,6 +69,25 @@ export default function CareerCanvasPage() {
       setStatusNote((prev) => (prev === msg ? null : prev));
     }, 4500);
   }, []);
+
+  const TEMPLATES: ResumeTemplate[] = ['minimalist', 'editorial', 'executive', 'modern'];
+
+  const cycleTemplate = (dir: -1 | 1) => {
+    const idx = TEMPLATES.indexOf(resumeTemplate);
+    const nextTpl = TEMPLATES[(idx + dir + TEMPLATES.length) % TEMPLATES.length];
+    setResumeTemplate(nextTpl);
+    setSelection(null);
+    setActiveDiagId(null);
+    if (!hasCustomProfile) {
+      const starterMap: Record<ResumeTemplate, CareerProfile> = {
+        minimalist: INITIAL_PROFILE,
+        editorial: CLASSIC_PROFILE,
+        executive: EXECUTIVE_PROFILE,
+        modern: MODERN_PROFILE,
+      };
+      setProfile(starterMap[nextTpl]);
+    }
+  };
 
   // Dismiss selection pill on Escape
   useEffect(() => {
@@ -326,6 +356,7 @@ export default function CareerCanvasPage() {
 
       if (data.profile) {
         setProfile(data.profile);
+        setHasCustomProfile(true);
         setPendingDiffs([]);
         setSelection(null);
         showToast('CV imported onto canvas — highlight any line or tap the orb to refine');
@@ -452,9 +483,82 @@ export default function CareerCanvasPage() {
         />
       )}
 
+      {/* Floating Template Prev/Next Chevrons */}
+      {viewMode === 'resume' && (
+        <>
+          <button
+            type="button"
+            onClick={() => cycleTemplate(-1)}
+            title="Previous template"
+            className="no-print fixed left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-neutral-200/80 bg-white/85 backdrop-blur-md text-neutral-600 hover:text-neutral-900 hover:bg-white shadow-[0_6px_20px_rgba(15,23,42,0.08)] flex items-center justify-center transition hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5 stroke-[1.75]" />
+          </button>
+          <button
+            type="button"
+            onClick={() => cycleTemplate(1)}
+            title="Next template"
+            className="no-print fixed right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-neutral-200/80 bg-white/85 backdrop-blur-md text-neutral-600 hover:text-neutral-900 hover:bg-white shadow-[0_6px_20px_rgba(15,23,42,0.08)] flex items-center justify-center transition hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5 stroke-[1.75]" />
+          </button>
+        </>
+      )}
+
       {/* Centered Pure Document Canvas */}
       <div className="mx-auto max-w-[800px]">
-        {viewMode === 'resume' ? (
+        {viewMode === 'resume' && resumeTemplate === 'modern' ? (
+          <ModernTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={pendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={setProfile}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              setSelection(sel);
+              handleInlineAi('rewrite');
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'executive' ? (
+          <ExecutiveTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={pendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={setProfile}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              setSelection(sel);
+              handleInlineAi('rewrite');
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'editorial' ? (
+          <EditorialTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={pendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={setProfile}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              setSelection(sel);
+              handleInlineAi('rewrite');
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' ? (
           <article className="print-sheet py-4 sm:py-8 px-4 sm:px-10 text-neutral-800">
             {/* Top Charcoal Accent Bar */}
             <div className="h-[5px] w-full bg-[#2a2a2a] mb-9" />
