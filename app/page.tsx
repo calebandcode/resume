@@ -39,10 +39,10 @@ type ViewMode = 'resume' | 'portfolio';
 type ResumeTemplate = 'minimalist' | 'editorial' | 'executive' | 'modern' | 'swiss';
 
 export default function CareerCanvasPage() {
-  const [profile, setProfile] = useState<CareerProfile>(INITIAL_PROFILE);
+  const [profile, setProfile] = useState<CareerProfile>(EXECUTIVE_PROFILE);
   const [hasCustomProfile, setHasCustomProfile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('resume');
-  const [resumeTemplate, setResumeTemplate] = useState<ResumeTemplate>('minimalist');
+  const [resumeTemplate, setResumeTemplate] = useState<ResumeTemplate>('executive');
   const [showLinter, setShowLinter] = useState(true);
   const [activeDiagId, setActiveDiagId] = useState<string | null>(null);
 
@@ -72,7 +72,7 @@ export default function CareerCanvasPage() {
     }, 4500);
   }, []);
 
-  const TEMPLATES: ResumeTemplate[] = ['minimalist', 'editorial', 'executive', 'modern', 'swiss'];
+  const TEMPLATES: ResumeTemplate[] = ['executive', 'editorial', 'modern', 'minimalist', 'swiss'];
 
   const cycleTemplate = (dir: -1 | 1) => {
     const idx = TEMPLATES.indexOf(resumeTemplate);
