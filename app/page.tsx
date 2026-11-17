@@ -30,6 +30,7 @@ import { runCareerLinter } from '@/lib/linter';
 import { FloatingSelectionPill, SelectionContext } from '@/components/FloatingSelectionPill';
 import { BottomOrbBar } from '@/components/BottomOrbBar';
 import { DiffGhostCard } from '@/components/DiffGhostCard';
+import { EditableField } from '@/components/EditableField';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { ExecutiveTemplate } from '@/components/templates/ExecutiveTemplate';
 import { ModernTemplate } from '@/components/templates/ModernTemplate';
@@ -645,10 +646,30 @@ export default function CareerCanvasPage() {
 
                   {/* Right-aligned Contact Info */}
                   <div className="sm:text-right text-[10px] leading-[1.6] text-neutral-500 shrink-0 pt-1">
-                    {profile.addressLine1 && <div>{profile.addressLine1}</div>}
-                    <div>{profile.location}</div>
-                    {profile.phone && <div>{profile.phone}</div>}
-                    <div>{profile.email}</div>
+                    {profile.addressLine1 && (
+                      <EditableField
+                        as="div"
+                        value={profile.addressLine1}
+                        onCommit={(v) => setProfile((p) => ({ ...p, addressLine1: v }))}
+                      />
+                    )}
+                    <EditableField
+                      as="div"
+                      value={profile.location}
+                      onCommit={(v) => setProfile((p) => ({ ...p, location: v }))}
+                    />
+                    {profile.phone && (
+                      <EditableField
+                        as="div"
+                        value={profile.phone}
+                        onCommit={(v) => setProfile((p) => ({ ...p, phone: v }))}
+                      />
+                    )}
+                    <EditableField
+                      as="div"
+                      value={profile.email}
+                      onCommit={(v) => setProfile((p) => ({ ...p, email: v }))}
+                    />
                   </div>
                 </div>
 
@@ -710,16 +731,59 @@ export default function CareerCanvasPage() {
                   {profile.experience.map((exp) => (
                     <div key={exp.id}>
                       <div className={dimClass(exp.id)}>
-                        <div className="text-[11.5px] leading-snug">
-                          <span className="font-semibold text-neutral-900">{exp.role}</span>
-                          <span className="text-neutral-600 ml-1.5">
-                            {exp.company}
-                            {exp.location ? `, ${exp.location}` : ''}
-                          </span>
+                        <div className="text-[11.5px] leading-snug flex flex-wrap items-baseline gap-x-1.5">
+                          <EditableField
+                            value={exp.role}
+                            onCommit={(v) =>
+                              setProfile((p) => ({
+                                ...p,
+                                experience: p.experience.map((item) =>
+                                  item.id === exp.id ? { ...item, role: v } : item
+                                ),
+                              }))
+                            }
+                            className="font-semibold text-neutral-900"
+                          />
+                          <EditableField
+                            value={exp.company}
+                            onCommit={(v) =>
+                              setProfile((p) => ({
+                                ...p,
+                                experience: p.experience.map((item) =>
+                                  item.id === exp.id ? { ...item, company: v } : item
+                                ),
+                              }))
+                            }
+                            className="text-neutral-600"
+                          />
+                          {exp.location && (
+                            <EditableField
+                              value={exp.location}
+                              onCommit={(v) =>
+                                setProfile((p) => ({
+                                  ...p,
+                                  experience: p.experience.map((item) =>
+                                    item.id === exp.id ? { ...item, location: v } : item
+                                  ),
+                                }))
+                              }
+                              className="text-neutral-600"
+                            />
+                          )}
                         </div>
-                        <div className="text-[10px] italic text-neutral-400 mt-0.5">
-                          {exp.period}
-                        </div>
+                        <EditableField
+                          as="div"
+                          value={exp.period}
+                          onCommit={(v) =>
+                            setProfile((p) => ({
+                              ...p,
+                              experience: p.experience.map((item) =>
+                                item.id === exp.id ? { ...item, period: v } : item
+                              ),
+                            }))
+                          }
+                          className="text-[10px] italic text-neutral-400 mt-0.5"
+                        />
                       </div>
 
                       <div className="mt-1.5 space-y-1.5">
@@ -838,15 +902,59 @@ export default function CareerCanvasPage() {
                 <div className="space-y-5">
                   {profile.education.map((edu) => (
                     <div key={edu.id} className={dimClass(edu.id)}>
-                      <div className="text-[11.5px] leading-snug">
-                        <span className="font-semibold text-neutral-900">{edu.degree}</span>
-                        <span className="text-neutral-600 ml-1.5">{edu.school}</span>
+                      <div className="text-[11.5px] leading-snug flex flex-wrap items-baseline gap-x-1.5">
+                        <EditableField
+                          value={edu.degree}
+                          onCommit={(v) =>
+                            setProfile((p) => ({
+                              ...p,
+                              education: p.education.map((item) =>
+                                item.id === edu.id ? { ...item, degree: v } : item
+                              ),
+                            }))
+                          }
+                          className="font-semibold text-neutral-900"
+                        />
+                        <EditableField
+                          value={edu.school}
+                          onCommit={(v) =>
+                            setProfile((p) => ({
+                              ...p,
+                              education: p.education.map((item) =>
+                                item.id === edu.id ? { ...item, school: v } : item
+                              ),
+                            }))
+                          }
+                          className="text-neutral-600"
+                        />
                       </div>
-                      <div className="text-[10px] italic text-neutral-400 mt-0.5">{edu.period}</div>
+                      <EditableField
+                        as="div"
+                        value={edu.period}
+                        onCommit={(v) =>
+                          setProfile((p) => ({
+                            ...p,
+                            education: p.education.map((item) =>
+                              item.id === edu.id ? { ...item, period: v } : item
+                            ),
+                          }))
+                        }
+                        className="text-[10px] italic text-neutral-400 mt-0.5"
+                      />
                       {edu.description && (
-                        <p className="text-[11px] leading-[1.6] text-neutral-600 mt-1.5">
-                          {edu.description}
-                        </p>
+                        <EditableField
+                          as="p"
+                          value={edu.description}
+                          onCommit={(v) =>
+                            setProfile((p) => ({
+                              ...p,
+                              education: p.education.map((item) =>
+                                item.id === edu.id ? { ...item, description: v } : item
+                              ),
+                            }))
+                          }
+                          className="text-[11px] leading-[1.6] text-neutral-600 mt-1.5"
+                        />
                       )}
                     </div>
                   ))}
@@ -861,8 +969,18 @@ export default function CareerCanvasPage() {
               <section>
                 <h2 className="text-[15px] font-semibold text-neutral-900 mb-3">Skills</h2>
                 <div className="grid grid-cols-2 sm:grid-flow-col sm:grid-rows-8 gap-x-8 gap-y-1.5 text-[11px] text-neutral-600">
-                  {profile.skills.map((skill) => (
-                    <div key={skill}>{skill}</div>
+                  {profile.skills.map((skill, idx) => (
+                    <EditableField
+                      key={`${idx}-${skill}`}
+                      as="div"
+                      value={skill}
+                      onCommit={(v) =>
+                        setProfile((p) => ({
+                          ...p,
+                          skills: p.skills.map((s, i) => (i === idx ? v : s)),
+                        }))
+                      }
+                    />
                   ))}
                 </div>
               </section>
@@ -883,16 +1001,48 @@ export default function CareerCanvasPage() {
                       ]
                   ).map((ref) => (
                     <div key={ref.id}>
-                      <div className="text-[11.5px]">
-                        <span className="font-semibold text-neutral-900">{ref.name}</span>
+                      <div className="text-[11.5px] flex flex-wrap items-baseline gap-x-1.5">
+                        <EditableField
+                          value={ref.name}
+                          onCommit={(v) =>
+                            setProfile((p) => ({
+                              ...p,
+                              references: p.references?.map((r) =>
+                                r.id === ref.id ? { ...r, name: v } : r
+                              ),
+                            }))
+                          }
+                          className="font-semibold text-neutral-900"
+                        />
                         {ref.title && (
-                          <span className="text-neutral-600 ml-1.5">{ref.title}</span>
+                          <EditableField
+                            value={ref.title}
+                            onCommit={(v) =>
+                              setProfile((p) => ({
+                                ...p,
+                                references: p.references?.map((r) =>
+                                  r.id === ref.id ? { ...r, title: v } : r
+                                ),
+                              }))
+                            }
+                            className="text-neutral-600"
+                          />
                         )}
                       </div>
                       {ref.contact && (
-                        <div className="text-[10px] italic text-neutral-400 mt-0.5">
-                          {ref.contact}
-                        </div>
+                        <EditableField
+                          as="div"
+                          value={ref.contact}
+                          onCommit={(v) =>
+                            setProfile((p) => ({
+                              ...p,
+                              references: p.references?.map((r) =>
+                                r.id === ref.id ? { ...r, contact: v } : r
+                              ),
+                            }))
+                          }
+                          className="text-[10px] italic text-neutral-400 mt-0.5"
+                        />
                       )}
                     </div>
                   ))}

@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { CareerProfile, LinterDiagnostic, PendingDiff } from '@/lib/career-types';
 import { DiffGhostCard } from '@/components/DiffGhostCard';
+import { EditableField } from '@/components/EditableField';
 import type { SelectionContext } from '@/components/FloatingSelectionPill';
 
 interface ClassicTemplateProps {
@@ -49,8 +50,25 @@ export function EditorialTemplate({
         >
           {profile.fullName}
         </h1>
-        <p className="text-[11px] text-neutral-500 mt-1">
-          {[profile.location, profile.phone, profile.email].filter(Boolean).join('  •  ')}
+        <p className="text-[11px] text-neutral-500 mt-1 flex flex-wrap items-center gap-x-2">
+          <EditableField
+            value={profile.location}
+            onCommit={(v) => onUpdateProfile((p) => ({ ...p, location: v }))}
+          />
+          {profile.phone && (
+            <>
+              <span>•</span>
+              <EditableField
+                value={profile.phone}
+                onCommit={(v) => onUpdateProfile((p) => ({ ...p, phone: v }))}
+              />
+            </>
+          )}
+          <span>•</span>
+          <EditableField
+            value={profile.email}
+            onCommit={(v) => onUpdateProfile((p) => ({ ...p, email: v }))}
+          />
         </p>
       </header>
 
@@ -112,17 +130,62 @@ export function EditorialTemplate({
             <div key={exp.id}>
               <div className={`flex items-baseline justify-between gap-4 ${dimClass(exp.id)}`}>
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#1a1a1a]">
-                    {exp.role}
-                  </div>
-                  <div className="text-[11px] font-semibold text-neutral-800 mt-0.5">
-                    {exp.company}
-                    {exp.location ? ` (${exp.location})` : ''}
+                  <EditableField
+                    as="div"
+                    value={exp.role}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, role: v } : item
+                        ),
+                      }))
+                    }
+                    className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#1a1a1a]"
+                  />
+                  <div className="text-[11px] font-semibold text-neutral-800 mt-0.5 flex items-center gap-1">
+                    <EditableField
+                      value={exp.company}
+                      onCommit={(v) =>
+                        onUpdateProfile((p) => ({
+                          ...p,
+                          experience: p.experience.map((item) =>
+                            item.id === exp.id ? { ...item, company: v } : item
+                          ),
+                        }))
+                      }
+                    />
+                    {exp.location && (
+                      <>
+                        <span>(</span>
+                        <EditableField
+                          value={exp.location}
+                          onCommit={(v) =>
+                            onUpdateProfile((p) => ({
+                              ...p,
+                              experience: p.experience.map((item) =>
+                                item.id === exp.id ? { ...item, location: v } : item
+                              ),
+                            }))
+                          }
+                        />
+                        <span>)</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <span className="text-[10.5px] font-semibold text-neutral-800 shrink-0">
-                  {exp.period}
-                </span>
+                <EditableField
+                  value={exp.period}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      experience: p.experience.map((item) =>
+                        item.id === exp.id ? { ...item, period: v } : item
+                      ),
+                    }))
+                  }
+                  className="text-[10.5px] font-semibold text-neutral-800 shrink-0"
+                />
               </div>
 
               <ul className="mt-2 space-y-1.5">
@@ -242,12 +305,45 @@ export function EditorialTemplate({
               className={`flex items-baseline justify-between gap-4 ${dimClass(edu.id)}`}
             >
               <div>
-                <div className="text-[11px] font-bold text-[#1a1a1a]">{edu.degree}</div>
-                <div className="text-[10.5px] text-neutral-600 mt-0.5">{edu.school}</div>
+                <EditableField
+                  as="div"
+                  value={edu.degree}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      education: p.education.map((item) =>
+                        item.id === edu.id ? { ...item, degree: v } : item
+                      ),
+                    }))
+                  }
+                  className="text-[11px] font-bold text-[#1a1a1a]"
+                />
+                <EditableField
+                  as="div"
+                  value={edu.school}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      education: p.education.map((item) =>
+                        item.id === edu.id ? { ...item, school: v } : item
+                      ),
+                    }))
+                  }
+                  className="text-[10.5px] text-neutral-600 mt-0.5"
+                />
               </div>
-              <span className="text-[10.5px] font-semibold text-neutral-800 shrink-0">
-                {edu.period}
-              </span>
+              <EditableField
+                value={edu.period}
+                onCommit={(v) =>
+                  onUpdateProfile((p) => ({
+                    ...p,
+                    education: p.education.map((item) =>
+                      item.id === edu.id ? { ...item, period: v } : item
+                    ),
+                  }))
+                }
+                className="text-[10.5px] font-semibold text-neutral-800 shrink-0"
+              />
             </div>
           ))}
         </div>
@@ -260,19 +356,39 @@ export function EditorialTemplate({
         </h2>
         <div className="space-y-1 text-[11px] leading-[1.6] text-neutral-600">
           {profile.skills.some((s) => s.includes(':')) ? (
-            profile.skills.map((line) => {
+            profile.skills.map((line, idx) => {
               const [label, ...rest] = line.split(':');
               return (
-                <p key={line}>
+                <p key={`${idx}-${label}`}>
                   <span className="font-bold text-[#1a1a1a]">{label}:</span>
-                  {rest.join(':')}
+                  <EditableField
+                    value={rest.join(':').trim()}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        skills: p.skills.map((s, i) => (i === idx ? `${label}: ${v}` : s)),
+                      }))
+                    }
+                    className="ml-1"
+                  />
                 </p>
               );
             })
           ) : (
             <p>
               <span className="font-bold text-[#1a1a1a] mr-1.5">Skills:</span>
-              {profile.skills.join(', ')}
+              <EditableField
+                value={profile.skills.join(', ')}
+                onCommit={(v) =>
+                  onUpdateProfile((p) => ({
+                    ...p,
+                    skills: v
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  }))
+                }
+              />
             </p>
           )}
         </div>

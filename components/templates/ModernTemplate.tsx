@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { CareerProfile, LinterDiagnostic, PendingDiff } from '@/lib/career-types';
 import { DiffGhostCard } from '@/components/DiffGhostCard';
+import { EditableField } from '@/components/EditableField';
 import type { SelectionContext } from '@/components/FloatingSelectionPill';
 
 interface ModernTemplateProps {
@@ -63,10 +64,34 @@ export function ModernTemplate({
           {profile.headline}
         </p>
 
-        <div className="mt-4 border-y border-neutral-500/80 py-1.5 text-[10.5px] text-neutral-600">
-          {[profile.phone, profile.email, profile.location, profile.linkedin]
-            .filter(Boolean)
-            .join(' | ')}
+        <div className="mt-4 border-y border-neutral-500/80 py-1.5 text-[10.5px] text-neutral-600 flex flex-wrap items-center justify-center gap-x-2">
+          {profile.phone && (
+            <>
+              <EditableField
+                value={profile.phone}
+                onCommit={(v) => onUpdateProfile((p) => ({ ...p, phone: v }))}
+              />
+              <span>|</span>
+            </>
+          )}
+          <EditableField
+            value={profile.email}
+            onCommit={(v) => onUpdateProfile((p) => ({ ...p, email: v }))}
+          />
+          <span>|</span>
+          <EditableField
+            value={profile.location}
+            onCommit={(v) => onUpdateProfile((p) => ({ ...p, location: v }))}
+          />
+          {profile.linkedin && (
+            <>
+              <span>|</span>
+              <EditableField
+                value={profile.linkedin}
+                onCommit={(v) => onUpdateProfile((p) => ({ ...p, linkedin: v }))}
+              />
+            </>
+          )}
         </div>
       </header>
 
@@ -129,11 +154,58 @@ export function ModernTemplate({
               <div
                 className={`flex flex-wrap items-baseline justify-between gap-2 ${dimClass(exp.id)}`}
               >
-                <span className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#222222]">
-                  {exp.role}
-                </span>
-                <span className="text-[10.5px] italic text-neutral-600">
-                  {[exp.company, exp.location, exp.period].filter(Boolean).join(' | ')}
+                <EditableField
+                  value={exp.role}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      experience: p.experience.map((item) =>
+                        item.id === exp.id ? { ...item, role: v } : item
+                      ),
+                    }))
+                  }
+                  className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#222222]"
+                />
+                <span className="text-[10.5px] italic text-neutral-600 inline-flex flex-wrap items-center gap-x-1.5">
+                  <EditableField
+                    value={exp.company}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, company: v } : item
+                        ),
+                      }))
+                    }
+                  />
+                  {exp.location && (
+                    <>
+                      <span>|</span>
+                      <EditableField
+                        value={exp.location}
+                        onCommit={(v) =>
+                          onUpdateProfile((p) => ({
+                            ...p,
+                            experience: p.experience.map((item) =>
+                              item.id === exp.id ? { ...item, location: v } : item
+                            ),
+                          }))
+                        }
+                      />
+                    </>
+                  )}
+                  <span>|</span>
+                  <EditableField
+                    value={exp.period}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, period: v } : item
+                        ),
+                      }))
+                    }
+                  />
                 </span>
               </div>
 
@@ -254,11 +326,44 @@ export function ModernTemplate({
               className={`flex items-baseline justify-between gap-4 text-[10.5px] ${dimClass(edu.id)}`}
             >
               <div>
-                <span className="font-bold text-[#222222]">{edu.degree}</span>
+                <EditableField
+                  value={edu.degree}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      education: p.education.map((item) =>
+                        item.id === edu.id ? { ...item, degree: v } : item
+                      ),
+                    }))
+                  }
+                  className="font-bold text-[#222222]"
+                />
                 <span className="text-neutral-400 mx-1.5">|</span>
-                <span className="text-neutral-600">{edu.school}</span>
+                <EditableField
+                  value={edu.school}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      education: p.education.map((item) =>
+                        item.id === edu.id ? { ...item, school: v } : item
+                      ),
+                    }))
+                  }
+                  className="text-neutral-600"
+                />
               </div>
-              <span className="italic text-neutral-600 shrink-0">{edu.period}</span>
+              <EditableField
+                value={edu.period}
+                onCommit={(v) =>
+                  onUpdateProfile((p) => ({
+                    ...p,
+                    education: p.education.map((item) =>
+                      item.id === edu.id ? { ...item, period: v } : item
+                    ),
+                  }))
+                }
+                className="italic text-neutral-600 shrink-0"
+              />
             </div>
           ))}
         </div>
@@ -270,10 +375,18 @@ export function ModernTemplate({
           Skills and Expertise
         </h2>
         <ul className="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-1.5 px-4 text-[10.5px] text-neutral-600">
-          {profile.skills.map((skill) => (
-            <li key={skill} className="flex items-baseline gap-2">
+          {profile.skills.map((skill, idx) => (
+            <li key={`${idx}-${skill}`} className="flex items-baseline gap-2">
               <span className="text-neutral-700 select-none">•</span>
-              <span>{skill}</span>
+              <EditableField
+                value={skill}
+                onCommit={(v) =>
+                  onUpdateProfile((p) => ({
+                    ...p,
+                    skills: p.skills.map((s, i) => (i === idx ? v : s)),
+                  }))
+                }
+              />
             </li>
           ))}
         </ul>

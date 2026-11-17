@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { CareerProfile, LinterDiagnostic, PendingDiff } from '@/lib/career-types';
 import { DiffGhostCard } from '@/components/DiffGhostCard';
+import { EditableField } from '@/components/EditableField';
 import type { SelectionContext } from '@/components/FloatingSelectionPill';
 
 interface SwissTemplateProps {
@@ -75,26 +76,45 @@ export function SwissTemplate({
             <div className="space-y-3 text-[10.5px] leading-[1.55] text-neutral-500">
               <div>
                 {profile.addressLine1 && (
-                  <div className="font-medium text-neutral-700">{profile.addressLine1}</div>
+                  <EditableField
+                    as="div"
+                    value={profile.addressLine1}
+                    onCommit={(v) => onUpdateProfile((p) => ({ ...p, addressLine1: v }))}
+                    className="font-medium text-neutral-700"
+                  />
                 )}
-                <div className="font-medium text-neutral-700">{profile.location}</div>
+                <EditableField
+                  as="div"
+                  value={profile.location}
+                  onCommit={(v) => onUpdateProfile((p) => ({ ...p, location: v }))}
+                  className="font-medium text-neutral-700"
+                />
               </div>
 
               <div className="space-y-0.5">
                 {profile.phone && (
                   <div>
                     <span className="font-semibold text-neutral-800 mr-1">t:</span>
-                    {profile.phone}
+                    <EditableField
+                      value={profile.phone}
+                      onCommit={(v) => onUpdateProfile((p) => ({ ...p, phone: v }))}
+                    />
                   </div>
                 )}
                 <div className="break-all">
                   <span className="font-semibold text-neutral-800 mr-1">e:</span>
-                  {profile.email}
+                  <EditableField
+                    value={profile.email}
+                    onCommit={(v) => onUpdateProfile((p) => ({ ...p, email: v }))}
+                  />
                 </div>
                 {profile.website && (
                   <div>
                     <span className="font-semibold text-neutral-800 mr-1">w:</span>
-                    {profile.website}
+                    <EditableField
+                      value={profile.website}
+                      onCommit={(v) => onUpdateProfile((p) => ({ ...p, website: v }))}
+                    />
                   </div>
                 )}
               </div>
@@ -105,7 +125,11 @@ export function SwissTemplate({
                     <span className="w-3.5 h-3.5 rounded-[2px] bg-neutral-700 text-white text-[8px] font-bold inline-flex items-center justify-center shrink-0">
                       f
                     </span>
-                    <span className="truncate">{profile.facebook}</span>
+                    <EditableField
+                      value={profile.facebook}
+                      onCommit={(v) => onUpdateProfile((p) => ({ ...p, facebook: v }))}
+                      className="truncate"
+                    />
                   </div>
                 )}
                 {profile.behance && (
@@ -113,7 +137,11 @@ export function SwissTemplate({
                     <span className="w-3.5 h-3.5 rounded-[2px] bg-neutral-700 text-white text-[8px] font-bold inline-flex items-center justify-center shrink-0">
                       @
                     </span>
-                    <span className="truncate">{profile.behance}</span>
+                    <EditableField
+                      value={profile.behance}
+                      onCommit={(v) => onUpdateProfile((p) => ({ ...p, behance: v }))}
+                      className="truncate"
+                    />
                   </div>
                 )}
                 {profile.linkedin && (
@@ -121,7 +149,11 @@ export function SwissTemplate({
                     <span className="w-3.5 h-3.5 rounded-[2px] bg-neutral-700 text-white text-[8px] font-bold inline-flex items-center justify-center shrink-0">
                       in
                     </span>
-                    <span className="truncate">{profile.linkedin}</span>
+                    <EditableField
+                      value={profile.linkedin}
+                      onCommit={(v) => onUpdateProfile((p) => ({ ...p, linkedin: v }))}
+                      className="truncate"
+                    />
                   </div>
                 )}
               </div>
@@ -135,16 +167,58 @@ export function SwissTemplate({
             <div className="space-y-5">
               {profile.education.map((edu) => (
                 <div key={edu.id} className={dimClass(edu.id)}>
-                  <div className="text-[11.5px] font-bold text-[#222222] leading-snug">
-                    {edu.degree}
-                  </div>
-                  <div className="text-[10.5px] font-semibold text-neutral-700 mt-1">
-                    {edu.school} / {edu.period}
+                  <EditableField
+                    as="div"
+                    value={edu.degree}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        education: p.education.map((item) =>
+                          item.id === edu.id ? { ...item, degree: v } : item
+                        ),
+                      }))
+                    }
+                    className="text-[11.5px] font-bold text-[#222222] leading-snug"
+                  />
+                  <div className="text-[10.5px] font-semibold text-neutral-700 mt-1 flex flex-wrap items-center gap-x-1">
+                    <EditableField
+                      value={edu.school}
+                      onCommit={(v) =>
+                        onUpdateProfile((p) => ({
+                          ...p,
+                          education: p.education.map((item) =>
+                            item.id === edu.id ? { ...item, school: v } : item
+                          ),
+                        }))
+                      }
+                    />
+                    <span>/</span>
+                    <EditableField
+                      value={edu.period}
+                      onCommit={(v) =>
+                        onUpdateProfile((p) => ({
+                          ...p,
+                          education: p.education.map((item) =>
+                            item.id === edu.id ? { ...item, period: v } : item
+                          ),
+                        }))
+                      }
+                    />
                   </div>
                   {edu.description && (
-                    <p className="text-[10.5px] leading-[1.55] text-neutral-500 mt-1.5 line-clamp-3">
-                      {edu.description}
-                    </p>
+                    <EditableField
+                      as="p"
+                      value={edu.description}
+                      onCommit={(v) =>
+                        onUpdateProfile((p) => ({
+                          ...p,
+                          education: p.education.map((item) =>
+                            item.id === edu.id ? { ...item, description: v } : item
+                          ),
+                        }))
+                      }
+                      className="text-[10.5px] leading-[1.55] text-neutral-500 mt-1.5"
+                    />
                   )}
                 </div>
               ))}
@@ -156,8 +230,18 @@ export function SwissTemplate({
               Skills
             </h2>
             <ul className="space-y-1.5 text-[10.5px] text-neutral-500">
-              {profile.skills.slice(0, 8).map((skill) => (
-                <li key={skill}>{skill}</li>
+              {profile.skills.slice(0, 8).map((skill, idx) => (
+                <li key={`${idx}-${skill}`}>
+                  <EditableField
+                    value={skill}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        skills: p.skills.map((s, i) => (i === idx ? v : s)),
+                      }))
+                    }
+                  />
+                </li>
               ))}
             </ul>
           </section>
@@ -188,10 +272,59 @@ export function SwissTemplate({
             {profile.experience.map((exp) => (
               <div key={exp.id}>
                 <div className={dimClass(exp.id)}>
-                  <div className="text-[12.5px] font-bold text-[#222222]">{exp.role}</div>
-                  <div className="text-[11px] font-semibold text-neutral-700 mt-1">
-                    {exp.company}
-                    {exp.location ? `, ${exp.location}` : ''} / {exp.period}
+                  <EditableField
+                    as="div"
+                    value={exp.role}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, role: v } : item
+                        ),
+                      }))
+                    }
+                    className="text-[12.5px] font-bold text-[#222222]"
+                  />
+                  <div className="text-[11px] font-semibold text-neutral-700 mt-1 flex flex-wrap items-center gap-x-1">
+                    <EditableField
+                      value={exp.company}
+                      onCommit={(v) =>
+                        onUpdateProfile((p) => ({
+                          ...p,
+                          experience: p.experience.map((item) =>
+                            item.id === exp.id ? { ...item, company: v } : item
+                          ),
+                        }))
+                      }
+                    />
+                    {exp.location && (
+                      <>
+                        <span>,</span>
+                        <EditableField
+                          value={exp.location}
+                          onCommit={(v) =>
+                            onUpdateProfile((p) => ({
+                              ...p,
+                              experience: p.experience.map((item) =>
+                                item.id === exp.id ? { ...item, location: v } : item
+                              ),
+                            }))
+                          }
+                        />
+                      </>
+                    )}
+                    <span>/</span>
+                    <EditableField
+                      value={exp.period}
+                      onCommit={(v) =>
+                        onUpdateProfile((p) => ({
+                          ...p,
+                          experience: p.experience.map((item) =>
+                            item.id === exp.id ? { ...item, period: v } : item
+                          ),
+                        }))
+                      }
+                    />
                   </div>
                 </div>
 

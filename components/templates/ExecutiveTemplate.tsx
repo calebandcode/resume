@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { CareerProfile, LinterDiagnostic, PendingDiff } from '@/lib/career-types';
 import { DiffGhostCard } from '@/components/DiffGhostCard';
+import { EditableField } from '@/components/EditableField';
 import type { SelectionContext } from '@/components/FloatingSelectionPill';
 
 interface ExecutiveTemplateProps {
@@ -71,8 +72,23 @@ export function ExecutiveTemplate({
             {profile.headline}
           </span>
           <span className="w-[2px] h-3.5 bg-[#1a1a1a] inline-block" />
-          <span className="font-semibold text-neutral-700">
-            {[profile.phone, profile.email, profile.location].filter(Boolean).join('  –  ')}
+          <span className="font-semibold text-neutral-700 inline-flex flex-wrap items-center gap-x-2">
+            {profile.phone && (
+              <EditableField
+                value={profile.phone}
+                onCommit={(v) => onUpdateProfile((p) => ({ ...p, phone: v }))}
+              />
+            )}
+            {profile.phone && <span>–</span>}
+            <EditableField
+              value={profile.email}
+              onCommit={(v) => onUpdateProfile((p) => ({ ...p, email: v }))}
+            />
+            <span>–</span>
+            <EditableField
+              value={profile.location}
+              onCommit={(v) => onUpdateProfile((p) => ({ ...p, location: v }))}
+            />
           </span>
         </div>
       </header>
@@ -135,16 +151,59 @@ export function ExecutiveTemplate({
             <div key={exp.id}>
               <div className={dimClass(exp.id)}>
                 <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#1a1a1a]">
-                    {exp.role}
-                  </span>
-                  <span className="text-[10.5px] font-bold text-[#1a1a1a] shrink-0">
-                    {exp.period}
-                  </span>
+                  <EditableField
+                    value={exp.role}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, role: v } : item
+                        ),
+                      }))
+                    }
+                    className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#1a1a1a]"
+                  />
+                  <EditableField
+                    value={exp.period}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, period: v } : item
+                        ),
+                      }))
+                    }
+                    className="text-[10.5px] font-bold text-[#1a1a1a] shrink-0"
+                  />
                 </div>
-                <div className="text-[10.5px] italic text-neutral-600 mt-0.5">
-                  {exp.company}
-                  {exp.location ? `, ${exp.location}` : ''}
+                <div className="text-[10.5px] italic text-neutral-600 mt-0.5 flex items-center gap-1">
+                  <EditableField
+                    value={exp.company}
+                    onCommit={(v) =>
+                      onUpdateProfile((p) => ({
+                        ...p,
+                        experience: p.experience.map((item) =>
+                          item.id === exp.id ? { ...item, company: v } : item
+                        ),
+                      }))
+                    }
+                  />
+                  {exp.location && (
+                    <>
+                      <span>,</span>
+                      <EditableField
+                        value={exp.location}
+                        onCommit={(v) =>
+                          onUpdateProfile((p) => ({
+                            ...p,
+                            experience: p.experience.map((item) =>
+                              item.id === exp.id ? { ...item, location: v } : item
+                            ),
+                          }))
+                        }
+                      />
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -265,11 +324,44 @@ export function ExecutiveTemplate({
               className={`flex items-baseline justify-between gap-4 text-[10.5px] ${dimClass(edu.id)}`}
             >
               <div>
-                <span className="font-bold text-[#1a1a1a]">{edu.degree}</span>
+                <EditableField
+                  value={edu.degree}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      education: p.education.map((item) =>
+                        item.id === edu.id ? { ...item, degree: v } : item
+                      ),
+                    }))
+                  }
+                  className="font-bold text-[#1a1a1a]"
+                />
                 <span className="text-neutral-400 mx-1.5">|</span>
-                <span className="text-neutral-600">{edu.school}</span>
+                <EditableField
+                  value={edu.school}
+                  onCommit={(v) =>
+                    onUpdateProfile((p) => ({
+                      ...p,
+                      education: p.education.map((item) =>
+                        item.id === edu.id ? { ...item, school: v } : item
+                      ),
+                    }))
+                  }
+                  className="text-neutral-600"
+                />
               </div>
-              <span className="font-bold text-[#1a1a1a] shrink-0">{edu.period}</span>
+              <EditableField
+                value={edu.period}
+                onCommit={(v) =>
+                  onUpdateProfile((p) => ({
+                    ...p,
+                    education: p.education.map((item) =>
+                      item.id === edu.id ? { ...item, period: v } : item
+                    ),
+                  }))
+                }
+                className="font-bold text-[#1a1a1a] shrink-0"
+              />
             </div>
           ))}
         </div>
@@ -281,8 +373,18 @@ export function ExecutiveTemplate({
           Skills
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5 text-[10.5px] text-neutral-600">
-          {profile.skills.map((skill) => (
-            <div key={skill}>{skill}</div>
+          {profile.skills.map((skill, idx) => (
+            <EditableField
+              key={`${idx}-${skill}`}
+              as="div"
+              value={skill}
+              onCommit={(v) =>
+                onUpdateProfile((p) => ({
+                  ...p,
+                  skills: p.skills.map((s, i) => (i === idx ? v : s)),
+                }))
+              }
+            />
           ))}
         </div>
       </section>
