@@ -22,6 +22,7 @@ import {
   CLASSIC_PROFILE,
   EXECUTIVE_PROFILE,
   MODERN_PROFILE,
+  SWISS_PROFILE,
   PendingDiff,
   LinterDiagnostic,
 } from '@/lib/career-types';
@@ -32,9 +33,10 @@ import { DiffGhostCard } from '@/components/DiffGhostCard';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { ExecutiveTemplate } from '@/components/templates/ExecutiveTemplate';
 import { ModernTemplate } from '@/components/templates/ModernTemplate';
+import { SwissTemplate } from '@/components/templates/SwissTemplate';
 
 type ViewMode = 'resume' | 'portfolio';
-type ResumeTemplate = 'minimalist' | 'editorial' | 'executive' | 'modern';
+type ResumeTemplate = 'minimalist' | 'editorial' | 'executive' | 'modern' | 'swiss';
 
 export default function CareerCanvasPage() {
   const [profile, setProfile] = useState<CareerProfile>(INITIAL_PROFILE);
@@ -70,7 +72,7 @@ export default function CareerCanvasPage() {
     }, 4500);
   }, []);
 
-  const TEMPLATES: ResumeTemplate[] = ['minimalist', 'editorial', 'executive', 'modern'];
+  const TEMPLATES: ResumeTemplate[] = ['minimalist', 'editorial', 'executive', 'modern', 'swiss'];
 
   const cycleTemplate = (dir: -1 | 1) => {
     const idx = TEMPLATES.indexOf(resumeTemplate);
@@ -84,6 +86,7 @@ export default function CareerCanvasPage() {
         editorial: CLASSIC_PROFILE,
         executive: EXECUTIVE_PROFILE,
         modern: MODERN_PROFILE,
+        swiss: SWISS_PROFILE,
       };
       setProfile(starterMap[nextTpl]);
     }
@@ -507,7 +510,24 @@ export default function CareerCanvasPage() {
 
       {/* Centered Pure Document Canvas */}
       <div className="mx-auto max-w-[800px]">
-        {viewMode === 'resume' && resumeTemplate === 'modern' ? (
+        {viewMode === 'resume' && resumeTemplate === 'swiss' ? (
+          <SwissTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={pendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={setProfile}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              setSelection(sel);
+              handleInlineAi('rewrite');
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'modern' ? (
           <ModernTemplate
             profile={profile}
             showLinter={showLinter}

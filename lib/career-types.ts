@@ -540,3 +540,104 @@ export const MODERN_PROFILE: CareerProfile = {
   ],
 };
 
+export const SWISS_PROFILE: CareerProfile = {
+  fullName: 'RICHARD MILLE',
+  headline: 'CREATIVE DIRECTOR & UI ARCHITECT',
+  addressLine1: 'Seventh Avenue, Suite 4920',
+  location: 'New York, NY, USA',
+  phone: '+1 123 456 7890',
+  email: 'richard.mille@email.com',
+  website: 'www.richardmille.design',
+  facebook: 'facebook.com/richardmille',
+  linkedin: 'linkedin.com/in/richardmille',
+  behance: '@richardmille',
+  summary:
+    'Multidisciplinary creative director specializing in editorial web systems, brand identity, and product design.',
+  summaryEvidence: 'Richard Mille Swiss template',
+  experience: [
+    {
+      id: 's-exp-1',
+      role: 'Senior Product Designer',
+      company: 'Studio Meridian',
+      location: 'New York, NY',
+      period: '2022 - Present',
+      bullets: [
+        {
+          id: 's-b-1',
+          text: 'Led end-to-end interface design for enterprise publishing tools used by 120,000+ monthly creators, establishing a unified monochrome component system and cutting design-to-engineering handoff time by 35%.',
+          sourceEvidence: '120,000+ monthly creators, 35% faster handoff',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 's-exp-2',
+      role: 'Visual & UX Designer',
+      company: 'Atelier Digital',
+      location: 'New York, NY',
+      period: '2019 - 2022',
+      bullets: [
+        {
+          id: 's-b-2',
+          text: 'Designed editorial landing experiences, interactive brand guidelines, and responsive web applications for luxury and fintech clients across North America and Europe.',
+          verified: false,
+        },
+      ],
+    },
+    {
+      id: 's-exp-3',
+      role: 'UI Designer',
+      company: 'Northstar Labs',
+      location: 'Brooklyn, NY',
+      period: '2017 - 2019',
+      bullets: [
+        {
+          id: 's-b-3',
+          text: 'Collaborated with product managers and frontend engineers to ship accessible design systems, motion prototypes, and high-converting onboarding flows.',
+          verified: false,
+        },
+      ],
+    },
+    {
+      id: 's-exp-4',
+      role: 'Junior Graphic Designer',
+      company: 'Press & Co.',
+      location: 'New York, NY',
+      period: '2015 - 2017',
+      bullets: [
+        {
+          id: 's-b-4',
+          text: 'Produced print layouts, typographic posters, and digital campaign assets while supporting senior art directors on seasonal brand launches.',
+          verified: false,
+        },
+      ],
+    },
+  ],
+  projects: [],
+  education: [
+    {
+      id: 's-edu-1',
+      school: 'Parsons School of Design',
+      degree: 'M.F.A. Communication Design',
+      period: '2013 - 2015',
+      description: 'Focused on editorial typography, interaction systems, and digital publishing.',
+    },
+    {
+      id: 's-edu-2',
+      school: 'New York University',
+      degree: 'B.A. Visual Arts',
+      period: '2009 - 2013',
+      description: 'Studied graphic composition, studio photography, and media theory.',
+    },
+  ],
+  skills: [
+    'Adobe Photoshop',
+    'Adobe InDesign',
+    'Adobe Illustrator',
+    'Figma & Prototyping',
+    'Editorial Typography',
+    'JavaScript / CSS',
+    'After Effects',
+  ],
+};
+
