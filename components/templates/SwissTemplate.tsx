@@ -37,32 +37,18 @@ export function SwissTemplate({
     <article className="print-sheet mx-auto max-w-[740px] py-8 sm:py-12 px-4 sm:px-8 text-neutral-800">
       {/* Centered Wide-Tracked Header */}
       <header className={`text-center pb-12 ${dimClass('header')}`}>
-        <h1
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => {
-            const next = e.currentTarget.textContent;
-            if (next !== null) {
-              onUpdateProfile((p) => ({ ...p, fullName: next || p.fullName }));
-            }
-          }}
-          className="text-[24px] sm:text-[28px] font-semibold uppercase tracking-[0.28em] mr-[-0.28em] text-[#222222] leading-tight focus:outline-none"
-        >
-          {profile.fullName}
-        </h1>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => {
-            const next = e.currentTarget.textContent;
-            if (next !== null) {
-              onUpdateProfile((p) => ({ ...p, headline: next || p.headline }));
-            }
-          }}
-          className="text-[10.5px] uppercase tracking-[0.26em] mr-[-0.26em] text-neutral-500 mt-2 focus:outline-none"
-        >
-          {profile.headline}
-        </p>
+        <EditableField
+          as="h1"
+          value={profile.fullName}
+          onCommit={(v) => onUpdateProfile((p) => ({ ...p, fullName: v }))}
+          className="text-[24px] sm:text-[28px] font-semibold uppercase tracking-[0.28em] mr-[-0.28em] text-[#222222] leading-tight"
+        />
+        <EditableField
+          as="p"
+          value={profile.headline}
+          onCommit={(v) => onUpdateProfile((p) => ({ ...p, headline: v }))}
+          className="text-[10.5px] uppercase tracking-[0.26em] mr-[-0.26em] text-neutral-500 mt-2"
+        />
       </header>
 
       {/* Asymmetric 2-Column Body: 195px Left Sidebar | Wide Right Work Experience */}
@@ -270,7 +256,7 @@ export function SwissTemplate({
 
           <div className="space-y-7">
             {profile.experience.map((exp) => (
-              <div key={exp.id}>
+              <div key={exp.id} data-focus-id={exp.id}>
                 <div className={dimClass(exp.id)}>
                   <EditableField
                     as="div"
@@ -342,19 +328,19 @@ export function SwissTemplate({
 
                     return (
                       <div key={bullet.id} className={`relative ${dimClass(bullet.id)}`}>
-                        <p
-                          contentEditable
-                          suppressContentEditableWarning
-                          data-editable-type="experience_bullet"
-                          data-parent-id={exp.id}
-                          data-target-id={bullet.id}
+                        <EditableField
+                          as="p"
+                          value={bullet.text}
+                          markClass={markClass}
+                          dataEditableType="experience_bullet"
+                          dataParentId={exp.id}
+                          dataTargetId={bullet.id}
                           onClick={() => {
                             if (topDiag && window.getSelection()?.isCollapsed) {
                               onSetActiveDiagId(isDiagOpen ? null : bullet.id);
                             }
                           }}
-                          onBlur={(e) => {
-                            const updated = e.currentTarget.textContent || bullet.text;
+                          onCommit={(updated) =>
                             onUpdateProfile((p) => ({
                               ...p,
                               experience: p.experience.map((item) =>
@@ -367,12 +353,10 @@ export function SwissTemplate({
                                       ),
                                     }
                               ),
-                            }));
-                          }}
-                          className="text-[11px] leading-[1.68] text-neutral-500 focus:outline-none"
-                        >
-                          <span className={markClass}>{bullet.text}</span>
-                        </p>
+                            }))
+                          }
+                          className="text-[11px] leading-[1.68] text-neutral-500"
+                        />
 
                         {isDiagOpen && topDiag && (
                           <div className="no-print absolute left-0 top-full mt-1.5 z-30 w-72 rounded-2xl border border-neutral-200/80 bg-white/95 backdrop-blur-xl p-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">

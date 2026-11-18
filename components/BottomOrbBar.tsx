@@ -14,6 +14,7 @@ import {
   Check,
   X,
   CornerDownRight,
+  Target,
 } from 'lucide-react';
 import type { SelectionContext } from './FloatingSelectionPill';
 
@@ -25,10 +26,15 @@ interface BottomOrbBarProps {
   issueCount: number;
   publishing: boolean;
   attachedSelection?: SelectionContext | null;
+  tailorMode: boolean;
+  shiftedForDrawer?: boolean;
+  hideOnMobile?: boolean;
   onClearAttachedSelection: () => void;
+  onClearTailorMode: () => void;
   onChangeViewMode: (mode: 'resume' | 'portfolio') => void;
   onToggleLinter: () => void;
   onImportClick: () => void;
+  onOpenTailor: () => void;
   onExportPdf: () => void;
   onPublishPortfolio: () => void;
   onSubmitCommand: (payload: { text?: string; audio?: Blob }) => Promise<void>;
@@ -42,10 +48,15 @@ export function BottomOrbBar({
   issueCount,
   publishing,
   attachedSelection,
+  tailorMode,
+  shiftedForDrawer = false,
+  hideOnMobile = false,
   onClearAttachedSelection,
+  onClearTailorMode,
   onChangeViewMode,
   onToggleLinter,
   onImportClick,
+  onOpenTailor,
   onExportPdf,
   onPublishPortfolio,
   onSubmitCommand,
@@ -59,10 +70,10 @@ export function BottomOrbBar({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (attachedSelection) {
+    if (attachedSelection || tailorMode) {
       inputRef.current?.focus();
     }
-  }, [attachedSelection]);
+  }, [attachedSelection, tailorMode]);
 
   const toggleRecording = async () => {
     if (recording) {
@@ -103,7 +114,11 @@ export function BottomOrbBar({
   };
 
   return (
-    <div className="no-print fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2.5 w-full max-w-2xl px-4">
+    <div
+      className={`no-print fixed bottom-6 -translate-x-1/2 z-40 flex-col items-center gap-2.5 w-full max-w-2xl px-4 transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        hideOnMobile ? 'hidden lg:flex' : 'flex'
+      } ${shiftedForDrawer ? 'left-1/2 lg:left-[calc(50%+200px)]' : 'left-1/2'}`}
+    >
       {statusNote && (
         <div className="rounded-full bg-neutral-900/90 backdrop-blur-md text-white text-[12px] px-3.5 py-1.5 shadow-lg">
           {statusNote}
@@ -130,6 +145,18 @@ export function BottomOrbBar({
           >
             <Upload className="w-4 h-4 text-neutral-500" />
             Import PDF / Photo CV
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPlusOpen(false);
+              onOpenTailor();
+            }}
+            className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] text-neutral-700 hover:bg-neutral-100 transition cursor-pointer text-left"
+          >
+            <Target className="w-4 h-4 text-indigo-600" />
+            Tailor to Job
           </button>
 
           <button
@@ -220,12 +247,12 @@ export function BottomOrbBar({
         <form
           onSubmit={handleSubmit}
           className={`w-full flex flex-col bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08),0_1px_3px_rgba(15,23,42,0.04)] border border-neutral-200/60 transition-[border-radius] ${
-            attachedSelection ? 'rounded-[28px] p-2' : 'rounded-full'
+            attachedSelection || tailorMode ? 'rounded-[28px] p-2.5' : 'rounded-full'
           }`}
         >
           {/* Quoted Selection (grey block inside the input) */}
           {attachedSelection && (
-            <div className="group relative flex items-start gap-3 rounded-[20px] bg-[#f0f0f0] pl-3.5 pr-9 py-2.5">
+            <div className="group relative flex items-start gap-3 rounded-[20px] bg-[#f0f0f0] pl-3.5 pr-9 py-2.5 mb-1">
               <CornerDownRight className="w-4 h-4 mt-[3px] text-neutral-500 shrink-0 stroke-[1.75]" />
               <p className="line-clamp-3 text-[13.5px] leading-[1.5] text-neutral-700">
                 {attachedSelection.text}
@@ -241,6 +268,82 @@ export function BottomOrbBar({
             </div>
           )}
 
+          {tailorMode ? (
+            <>
+              <input
+                ref={inputRef}
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onFocus={() => {
+                  setPlusOpen(false);
+                  setModeOpen(false);
+                }}
+                disabled={loading}
+                placeholder="Paste the job description to tailor your resume..."
+                className="w-full bg-transparent text-[15px] text-neutral-800 placeholder:text-neutral-500 focus:outline-none px-2.5 py-2"
+              />
+              <div className="w-full flex items-center justify-between gap-2 pt-1 px-1">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModeOpen(false);
+                      setPlusOpen((v) => !v);
+                    }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition cursor-pointer shrink-0"
+                    title="Import CV, Linter, Export & Publish"
+                  >
+                    <Plus
+                      className={`w-5 h-5 stroke-[1.75] transition-transform duration-200 ease-out ${
+                        plusOpen ? 'rotate-45' : 'rotate-0'
+                      }`}
+                    />
+                  </button>
+
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f0f0f0] px-3 py-1.5 text-[13px] font-medium text-neutral-800">
+                    <Target className="w-3.5 h-3.5 text-neutral-700 stroke-[1.75]" />
+                    <span>Tailor to Job</span>
+                    <button
+                      type="button"
+                      onClick={onClearTailorMode}
+                      className="ml-0.5 rounded-full p-0.5 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 transition cursor-pointer"
+                      title="Exit Tailor mode"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlusOpen(false);
+                      setModeOpen((v) => !v);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[13.5px] font-medium text-neutral-700 hover:bg-neutral-100 transition cursor-pointer shrink-0"
+                  >
+                    <span>{viewMode === 'resume' ? 'Resume' : 'Portfolio'}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !text.trim()}
+                    className="w-9 h-9 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white flex items-center justify-center disabled:opacity-35 transition cursor-pointer shrink-0"
+                    title="Analyze & Tailor"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
           <div className={`w-full flex items-center gap-2 ${attachedSelection ? 'h-12 px-1.5' : 'h-14 px-3.5'}`}>
           <button
             type="button"
@@ -268,7 +371,15 @@ export function BottomOrbBar({
               setModeOpen(false);
             }}
             disabled={loading}
-            placeholder={recording ? 'Listening... tap mic to finish' : 'Ask Gemini'}
+            placeholder={
+              recording
+                ? 'Listening... tap mic to finish'
+                : attachedSelection
+                  ? 'How should we refine this?'
+                  : viewMode === 'portfolio'
+                    ? 'Speak or ask to update your portfolio...'
+                    : 'Speak or ask to update your resume...'
+            }
             className="flex-1 bg-transparent text-[15px] text-neutral-800 placeholder:text-neutral-500 focus:outline-none px-1"
           />
 
@@ -319,6 +430,7 @@ export function BottomOrbBar({
             </button>
           )}
           </div>
+          )}
         </form>
       </div>
     </div>

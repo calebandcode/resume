@@ -66,6 +66,16 @@ body {
   background: rgba(0, 0, 0, 0.38);
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 /* Ping keyframe for the availability dot */
 @keyframes ping {
   75%,
@@ -109,6 +119,21 @@ body {
   box-shadow: 0 0 0 5px rgba(236, 72, 153, 0.2), 0 0 28px rgba(236, 72, 153, 0.65) !important;
 }
 
+/* 4-Pill Monochrome Voice Waveform */
+@keyframes voicePill {
+  0%, 100% {
+    transform: scaleY(0.72);
+  }
+  50% {
+    transform: scaleY(1.18);
+  }
+}
+
+.voice-pill-active {
+  animation: voicePill 0.85s ease-in-out infinite;
+  transform-origin: center;
+}
+
 /* Editorial Marker & Hand-Drawn Ink Annotations */
 .linter-marker {
   background: linear-gradient(
@@ -127,6 +152,14 @@ body {
 
 .linter-squiggle {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='6' viewBox='0 0 18 6'%3E%3Cpath d='M0 4 Q 4.5 0.5, 9 3.5 T 18 3.5' fill='none' stroke='%232563eb' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: 13px 5px;
+  padding-bottom: 3px;
+}
+
+.diff-amber-squiggle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='6' viewBox='0 0 18 6'%3E%3Cpath d='M0 4 Q 4.5 0.5, 9 3.5 T 18 3.5' fill='none' stroke='%23d97706' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
   background-position: left bottom;
   background-size: 13px 5px;

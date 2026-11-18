@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, X, ShieldCheck } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { PendingDiff } from '@/lib/career-types';
 
 interface DiffGhostCardProps {
@@ -13,54 +13,62 @@ export function DiffGhostCard({ diff, onAccept, onDiscard }: DiffGhostCardProps)
   const isAddition = diff.targetType === 'add_experience' || diff.targetType === 'add_project';
 
   return (
-    <div className="no-print mt-2 mb-3 rounded-2xl border border-blue-200/80 bg-white/95 backdrop-blur-md p-3.5 shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1.5 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-              {isAddition ? 'New addition' : 'Suggested edit'}
+    <div className="no-print absolute left-0 right-0 top-full mt-2 z-30 rounded-2xl border border-indigo-200/80 bg-white/95 backdrop-blur-xl shadow-[0_16px_44px_rgba(15,23,42,0.13)] overflow-hidden transition-all">
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-indigo-100/80 bg-indigo-50/40">
+        <div className="flex items-center gap-2">
+          {isAddition && (
+            <span className="rounded-full bg-indigo-100/80 text-indigo-900 px-2.5 py-0.5 text-[10.5px] font-medium">
+              New addition
             </span>
-            <span className="text-[11px] text-neutral-500">{diff.reason}</span>
-          </div>
-
-          {!isAddition && diff.originalText && (
-            <p className="text-[12.5px] text-rose-600/80 line-through decoration-rose-300 leading-relaxed">
-              {diff.originalText}
-            </p>
           )}
-
-          <p className="text-[13px] text-emerald-800 bg-emerald-50/70 border border-emerald-100 rounded-xl px-2.5 py-1.5 leading-relaxed">
-            {diff.proposedText}
-          </p>
-
           {diff.sourceEvidence && (
-            <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 pt-0.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Grounded in: {diff.sourceEvidence}</span>
-            </div>
+            <span className="rounded-full bg-indigo-100/80 text-indigo-800 px-2.5 py-0.5 text-[10.5px] font-medium">
+              Grounded
+            </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => onAccept(diff)}
-            className="inline-flex items-center gap-1 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-3 py-1.5 text-[11.5px] font-medium transition cursor-pointer"
-          >
-            <Check className="w-3 h-3" />
-            Accept
-          </button>
+        <button
+          type="button"
+          onClick={() => onDiscard(diff.id)}
+          title="Dismiss"
+          className="rounded-full p-1 text-neutral-400 hover:bg-indigo-100/60 hover:text-indigo-900 transition cursor-pointer"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Clean Body + Action Footer */}
+      <div className="px-4 py-3.5">
+        {!isAddition && diff.originalText && (
+          <p className="text-[11.5px] leading-[1.6] text-neutral-500 mb-2">
+            <span className="diff-amber-squiggle">{diff.originalText}</span>
+          </p>
+        )}
+        <p className="text-[12.5px] leading-[1.6] text-neutral-800">{diff.proposedText}</p>
+        {diff.reason && (
+          <p className="text-[11px] text-neutral-400 mt-1.5 leading-snug">{diff.reason}</p>
+        )}
+
+        <div className="mt-3 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => onDiscard(diff.id)}
-            className="inline-flex items-center gap-1 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 px-2.5 py-1.5 text-[11.5px] font-medium transition cursor-pointer"
+            className="rounded-full px-3 py-1 text-[11.5px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 transition cursor-pointer"
           >
-            <X className="w-3 h-3" />
-            Discard
+            Dismiss
+          </button>
+          <button
+            type="button"
+            onClick={() => onAccept(diff)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-100/80 hover:bg-indigo-200/80 text-indigo-950 px-3.5 py-1 text-[11.5px] font-medium transition cursor-pointer"
+          >
+            <Check className="w-3.5 h-3.5" />
+            Accept
           </button>
         </div>
       </div>
     </div>
   );
 }
-

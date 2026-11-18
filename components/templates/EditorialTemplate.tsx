@@ -37,19 +37,12 @@ export function EditorialTemplate({
     <article className="print-sheet mx-auto max-w-[740px] py-8 sm:py-10 px-4 sm:px-10 text-neutral-800">
       {/* Header: Bold Uppercase Name + Dot-Separated Contact */}
       <header className={`pb-6 ${dimClass('header')}`}>
-        <h1
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={(e) => {
-            const next = e.currentTarget.textContent;
-            if (next !== null) {
-              onUpdateProfile((p) => ({ ...p, fullName: next || p.fullName }));
-            }
-          }}
-          className="text-[22px] sm:text-[25px] font-bold uppercase tracking-[0.06em] text-[#1a1a1a] leading-tight focus:outline-none"
-        >
-          {profile.fullName}
-        </h1>
+        <EditableField
+          as="h1"
+          value={profile.fullName}
+          onCommit={(v) => onUpdateProfile((p) => ({ ...p, fullName: v }))}
+          className="text-[22px] sm:text-[25px] font-bold uppercase tracking-[0.06em] text-[#1a1a1a] leading-tight"
+        />
         <p className="text-[11px] text-neutral-500 mt-1 flex flex-wrap items-center gap-x-2">
           <EditableField
             value={profile.location}
@@ -73,25 +66,18 @@ export function EditorialTemplate({
       </header>
 
       {/* Professional Profile */}
-      <section className={`mb-7 ${dimClass('summary')}`}>
+      <section className={`relative mb-7 ${dimClass('summary')}`}>
         <h2 className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#1a1a1a] pb-1.5 border-b-[1.5px] border-[#1a1a1a] mb-3">
           Professional Profile
         </h2>
-        <p
-          contentEditable
-          suppressContentEditableWarning
-          data-editable-type="summary"
-          data-target-id="summary"
-          onBlur={(e) => {
-            const next = e.currentTarget.textContent;
-            if (next !== null) {
-              onUpdateProfile((p) => ({ ...p, summary: next || p.summary }));
-            }
-          }}
-          className="text-[11px] leading-[1.65] text-neutral-600 focus:outline-none"
-        >
-          {profile.summary}
-        </p>
+        <EditableField
+          as="p"
+          value={profile.summary}
+          dataEditableType="summary"
+          dataTargetId="summary"
+          onCommit={(v) => onUpdateProfile((p) => ({ ...p, summary: v }))}
+          className="text-[11px] leading-[1.65] text-neutral-600"
+        />
         {pendingDiffs
           .filter((d) => d.targetType === 'summary')
           .map((d) => (
@@ -127,7 +113,7 @@ export function EditorialTemplate({
 
         <div className="space-y-5">
           {profile.experience.map((exp) => (
-            <div key={exp.id}>
+            <div key={exp.id} data-focus-id={exp.id}>
               <div className={`flex items-baseline justify-between gap-4 ${dimClass(exp.id)}`}>
                 <div>
                   <EditableField
@@ -204,19 +190,19 @@ export function EditorialTemplate({
                     <li key={bullet.id} className={`relative ${dimClass(bullet.id)}`}>
                       <div className="flex items-baseline gap-2">
                         <span className="text-[11px] text-neutral-700 select-none">•</span>
-                        <p
-                          contentEditable
-                          suppressContentEditableWarning
-                          data-editable-type="experience_bullet"
-                          data-parent-id={exp.id}
-                          data-target-id={bullet.id}
+                        <EditableField
+                          as="p"
+                          value={bullet.text}
+                          markClass={markClass}
+                          dataEditableType="experience_bullet"
+                          dataParentId={exp.id}
+                          dataTargetId={bullet.id}
                           onClick={() => {
                             if (topDiag && window.getSelection()?.isCollapsed) {
                               onSetActiveDiagId(isDiagOpen ? null : bullet.id);
                             }
                           }}
-                          onBlur={(e) => {
-                            const updated = e.currentTarget.textContent || bullet.text;
+                          onCommit={(updated) =>
                             onUpdateProfile((p) => ({
                               ...p,
                               experience: p.experience.map((item) =>
@@ -229,12 +215,10 @@ export function EditorialTemplate({
                                       ),
                                     }
                               ),
-                            }));
-                          }}
-                          className="text-[11px] leading-[1.65] text-neutral-600 flex-1 focus:outline-none"
-                        >
-                          <span className={markClass}>{bullet.text}</span>
-                        </p>
+                            }))
+                          }
+                          className="text-[11px] leading-[1.65] text-neutral-600 flex-1"
+                        />
                       </div>
 
                       {isDiagOpen && topDiag && (

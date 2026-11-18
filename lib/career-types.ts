@@ -641,3 +641,209 @@ export const SWISS_PROFILE: CareerProfile = {
   ],
 };
 
+export const OLIVERA_PROFILE: CareerProfile = {
+  fullName: 'OLIVERA HEWITT',
+  headline: 'PROFESSIONAL JOB TITLE',
+  location: 'London, UK',
+  phone: '0123.000.0000',
+  email: 'olivera.hewitt@email.com',
+  summary:
+    'Write a brief, engaging text about yourself. Provide information about your educational background, work experience, skills and key achievements relevant to the role you are applying for. Describe in one sentence your most impressive achievement and quantify it. Fill the personal profile with keywords from the job description. Try to cover all mandatory requirements within four to five sentences. To make it easier for you, we have created a template – take a look at page 8 in the Resume Writing Guide. Additionally, include relevant skills or areas of expertise below:',
+  summaryEvidence: 'Olivera Hewitt ATS template',
+  experience: [
+    {
+      id: 'o-exp-1',
+      role: 'SENIOR PRODUCT STRATEGIST',
+      company: 'Northbridge Group',
+      location: 'London, UK',
+      period: '04/2023 – Present',
+      bullets: [
+        {
+          id: 'o-b-1',
+          text: "Use bulleted lists to describe your main responsibilities and achievements in a succinct manner. Start every bullet point with an action verb, such as 'improved', 'coordinated' and 'implemented'.",
+          verified: false,
+        },
+        {
+          id: 'o-b-2',
+          text: 'Be consistent with the tense you are using. Describe your current role in the present continuous tense and previous roles in the past simple tense.',
+          verified: false,
+        },
+        {
+          id: 'o-b-3',
+          text: "You don't need to include all tasks you have ever done. Instead, focus on the ones relevant to your job application.",
+          verified: false,
+        },
+        {
+          id: 'o-b-4',
+          text: 'Quantify your responsibilities and achievements wherever possible. Include relevant measures (e.g. increased sales, improved customer satisfaction or reduced complaints by 12.5%).',
+          sourceEvidence: '12.5% complaint reduction example',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 'o-exp-2',
+      role: 'OPERATIONS SPECIALIST',
+      company: 'Harborline Co.',
+      location: 'Manchester, UK',
+      period: '06/2020 – 03/2023',
+      bullets: [
+        {
+          id: 'o-b-5',
+          text: 'Double-check your resume to be sure there are no typos. Just in case, share it with someone else who can proofread it for you to avoid sending a flawed resume.',
+          verified: false,
+        },
+        {
+          id: 'o-b-6',
+          text: 'Once you are sure your resume is complete, save it as a .pdf file. By saving your resume as a .pdf document, you will preserve its formatting and ensure that your resume looks exactly the same on every computer.',
+          verified: false,
+        },
+        {
+          id: 'o-b-7',
+          text: "Name your resume professionally. The following title works the best: 'YourNameSurname_resume.pdf'.",
+          verified: false,
+        },
+        {
+          id: 'o-b-8',
+          text: 'Congratulations! The hardest part is over. Include a few more details below and your resume will be ready to go!',
+          verified: false,
+        },
+      ],
+    },
+  ],
+  projects: [],
+  education: [
+    {
+      id: 'o-edu-1',
+      school: 'University of London, London, UK',
+      degree: "MASTER'S DEGREE IN BUSINESS STRATEGY",
+      period: '09/2018 – 06/2020',
+    },
+    {
+      id: 'o-edu-2',
+      school: 'University of Manchester, Manchester, UK',
+      degree: "BACHELOR'S DEGREE IN ECONOMICS",
+      period: '09/2014 – 06/2018',
+    },
+  ],
+  skills: [
+    'Product Strategy',
+    'User Research',
+    'Design Systems',
+    'Roadmapping',
+    'Stakeholder Comms',
+    'Process Design',
+    'Agile Delivery',
+    'Data Analytics',
+    'Copywriting',
+    'Client Relations',
+  ],
+};
+
+export const AUDREY_PROFILE: CareerProfile = {
+  fullName: 'Audrey Murphy',
+  headline: 'SENIOR DATA ANALYST',
+  location: 'Chicago, IL',
+  phone: '555.555.5555',
+  email: 'audrey.murphy@mail.com',
+  linkedin: 'LinkedIn.com/in/audreymurphy',
+  summary:
+    'Detail-oriented Data Analyst with 5+ years turning complex datasets into clear executive dashboards, predictive models, and revenue-driving product insights. Proven track record partnering with engineering and leadership teams to streamline reporting pipelines and quantify business impact.',
+  summaryEvidence: 'Audrey Murphy template',
+  experience: [
+    {
+      id: 'a-exp-1',
+      role: 'LEAD DATA ANALYST',
+      company: 'MetricFlow',
+      location: 'Chicago, IL',
+      period: 'Mar 2022 – Present',
+      bullets: [
+        {
+          id: 'a-b-1',
+          text: 'Tailor your resume using important keywords from the job posting. Highlight the skills and outcomes most relevant to the target role.',
+          verified: false,
+        },
+        {
+          id: 'a-b-2',
+          text: 'Built automated SQL and Python reporting pipelines serving 40+ stakeholders across product, finance, and operations.',
+          sourceEvidence: '40+ stakeholders',
+          verified: true,
+        },
+        {
+          id: 'a-b-3',
+          text: 'Prove your accomplishments with numbers—reduced weekly manual spreadsheet reconciliation by 65% across regional teams.',
+          sourceEvidence: '65% reduction in manual reconciliation',
+          verified: true,
+        },
+        {
+          id: 'a-b-4',
+          text: 'Start every bullet with a strong action verb to emphasize ownership and measurable business impact.',
+          verified: false,
+        },
+      ],
+    },
+    {
+      id: 'a-exp-2',
+      role: 'BUSINESS INTELLIGENCE ANALYST',
+      company: 'Lakefront Retail',
+      location: 'Chicago, IL',
+      period: 'Jan 2020 – Feb 2022',
+      bullets: [
+        {
+          id: 'a-b-5',
+          text: 'Identified data discrepancies in key business reports that were leading to inaccurate forecasting across 12 regional hubs.',
+          sourceEvidence: '12 regional hubs',
+          verified: true,
+        },
+        {
+          id: 'a-b-6',
+          text: 'Designed executive KPI dashboards in SQL and Google Sheets, cutting leadership review prep time by 4 hours per week.',
+          sourceEvidence: '4 hours/week saved',
+          verified: true,
+        },
+        {
+          id: 'a-b-7',
+          text: 'Partnered with engineering to standardize event tracking schemas and improve warehouse query reliability.',
+          verified: false,
+        },
+      ],
+    },
+  ],
+  projects: [
+    {
+      id: 'a-proj-1',
+      name: 'CHURN PREDICTOR PIPELINE',
+      tagline: 'End-to-end customer retention scoring model & executive dashboard',
+      tech: ['Python', 'SQL', '2024'],
+      link: 'github.com/audreymurphy/churn-model',
+      highlights: [],
+    },
+    {
+      id: 'a-proj-2',
+      name: 'REVENUE COHORT EXPLORER',
+      tagline: 'Interactive SaaS cohort retention and LTV visualization toolkit',
+      tech: ['T-SQL', 'Google Sheets', '2023'],
+      link: 'audreymurphy.dev/cohorts',
+      highlights: [],
+    },
+  ],
+  education: [
+    {
+      id: 'a-edu-1',
+      school: 'Northwestern University, Evanston, IL',
+      degree: 'M.S. IN ANALYTICS',
+      period: '2018 – 2020',
+    },
+    {
+      id: 'a-edu-2',
+      school: 'University of Illinois, Urbana-Champaign, IL',
+      degree: 'B.S. IN STATISTICS',
+      period: '2014 – 2018',
+    },
+  ],
+  skills: [
+    'Professional Skills: Data Cleaning | Data Visualization | Machine Learning | Presentation Skills | Team Leadership | Strategic Planning | Process Improvement',
+    'Technical Skills: SQL | MySQL | T-SQL | R | Python | MS Excel | Google Sheets | MS Office',
+  ],
+};
+

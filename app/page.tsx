@@ -23,6 +23,8 @@ import {
   EXECUTIVE_PROFILE,
   MODERN_PROFILE,
   SWISS_PROFILE,
+  OLIVERA_PROFILE,
+  AUDREY_PROFILE,
   PendingDiff,
   LinterDiagnostic,
 } from '@/lib/career-types';
@@ -35,15 +37,31 @@ import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { ExecutiveTemplate } from '@/components/templates/ExecutiveTemplate';
 import { ModernTemplate } from '@/components/templates/ModernTemplate';
 import { SwissTemplate } from '@/components/templates/SwissTemplate';
+import { OliveraTemplate } from '@/components/templates/OliveraTemplate';
+import { AudreyTemplate } from '@/components/templates/AudreyTemplate';
+import { TailorCanvasPanel, TailorReport } from '@/components/TailorCanvasPanel';
+import { InterviewCanvasPanel, InterviewTurn } from '@/components/InterviewCanvasPanel';
+import { MinimalTopNav } from '@/components/MinimalTopNav';
+import { useLenis } from '@/components/providers/smooth-scroll-provider';
 
 type ViewMode = 'resume' | 'portfolio';
-type ResumeTemplate = 'minimalist' | 'editorial' | 'executive' | 'modern' | 'swiss';
+type ResumeTemplate =
+  | 'minimalist'
+  | 'editorial'
+  | 'executive'
+  | 'modern'
+  | 'swiss'
+  | 'olivera'
+  | 'audrey';
+
+const STORAGE_KEY = 'aura-career-canvas-v1';
 
 export default function CareerCanvasPage() {
   const [profile, setProfile] = useState<CareerProfile>(EXECUTIVE_PROFILE);
   const [hasCustomProfile, setHasCustomProfile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('resume');
   const [resumeTemplate, setResumeTemplate] = useState<ResumeTemplate>('executive');
+  const [hydrated, setHydrated] = useState(false);
   const [showLinter, setShowLinter] = useState(true);
   const [activeDiagId, setActiveDiagId] = useState<string | null>(null);
 
@@ -55,8 +73,70 @@ export default function CareerCanvasPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [tailorMode, setTailorMode] = useState(false);
+  const [tailorPanelOpen, setTailorPanelOpen] = useState(false);
+  const [tailorReport, setTailorReport] = useState<TailorReport | null>(null);
+  const [interviewOpen, setInterviewOpen] = useState(false);
+  const [interviewLoading, setInterviewLoading] = useState(false);
+  const [interviewDone, setInterviewDone] = useState(false);
+  const [interviewTurns, setInterviewTurns] = useState<InterviewTurn[]>([]);
+  const [interviewFocusId, setInterviewFocusId] = useState<string | null>(null);
+  const lenisRef = useLenis();
+
+  // Hydrate saved canvas state from localStorage after mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.profile) setProfile(parsed.profile);
+        if (parsed.resumeTemplate) setResumeTemplate(parsed.resumeTemplate);
+        if (typeof parsed.hasCustomProfile === 'boolean') {
+          setHasCustomProfile(parsed.hasCustomProfile);
+        }
+      }
+    } catch {
+      // ignore corrupted storage
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  // Auto-save canvas edits to localStorage
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ profile, resumeTemplate, hasCustomProfile })
+      );
+    } catch {
+      // ignore quota errors
+    }
+  }, [hydrated, profile, resumeTemplate, hasCustomProfile]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const pastRef = useRef<CareerProfile[]>([]);
+  const futureRef = useRef<CareerProfile[]>([]);
+
+  const updateProfileWithHistory = useCallback(
+    (updater: (prev: CareerProfile) => CareerProfile) => {
+      setProfile((prev) => {
+        const next = updater(prev);
+        if (next !== prev) {
+          pastRef.current = [...pastRef.current.slice(-49), prev];
+          futureRef.current = [];
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const inlinePendingDiffs = useMemo(
+    () => pendingDiffs.filter((d) => !d.id.startsWith('diff-tailor-')),
+    [pendingDiffs]
+  );
 
   const diagnosticsByTarget = useMemo(() => runCareerLinter(profile), [profile]);
 
@@ -73,7 +153,15 @@ export default function CareerCanvasPage() {
     }, 4500);
   }, []);
 
-  const TEMPLATES: ResumeTemplate[] = ['executive', 'editorial', 'modern', 'minimalist', 'swiss'];
+  const TEMPLATES: ResumeTemplate[] = [
+    'executive',
+    'editorial',
+    'modern',
+    'minimalist',
+    'swiss',
+    'olivera',
+    'audrey',
+  ];
 
   const cycleTemplate = (dir: -1 | 1) => {
     const idx = TEMPLATES.indexOf(resumeTemplate);
@@ -88,22 +176,62 @@ export default function CareerCanvasPage() {
         executive: EXECUTIVE_PROFILE,
         modern: MODERN_PROFILE,
         swiss: SWISS_PROFILE,
+        olivera: OLIVERA_PROFILE,
+        audrey: AUDREY_PROFILE,
       };
       setProfile(starterMap[nextTpl]);
     }
   };
 
-  // Dismiss selection pill on Escape
+  // Dismiss selection pill on Escape, and handle Undo/Redo (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelection(null);
         setActiveDiagId(null);
+        return;
+      }
+
+      const isMod = e.ctrlKey || e.metaKey;
+      if (!isMod) return;
+
+      const active = document.activeElement as HTMLElement | null;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+        return;
+      }
+      // If user is actively typing inside a contentEditable field, let browser handle local keystrokes
+      if (active?.isContentEditable) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        if (pastRef.current.length > 0) {
+          e.preventDefault();
+          setProfile((curr) => {
+            const prev = pastRef.current[pastRef.current.length - 1];
+            pastRef.current = pastRef.current.slice(0, -1);
+            futureRef.current = [curr, ...futureRef.current];
+            return prev;
+          });
+          showToast('Undid last change');
+        }
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        if (futureRef.current.length > 0) {
+          e.preventDefault();
+          setProfile((curr) => {
+            const next = futureRef.current[0];
+            futureRef.current = futureRef.current.slice(1);
+            pastRef.current = [...pastRef.current, curr];
+            return next;
+          });
+          showToast('Redid change');
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [showToast]);
 
   // Global selection listener so dragging slightly outside a block or keyboard selection always works
   useEffect(() => {
@@ -202,8 +330,13 @@ export default function CareerCanvasPage() {
     }
   };
 
-  // Bottom Orb voice or text command (routes to inline edit if a selection is attached)
+  // Bottom Orb voice or text command (routes to Tailor or inline edit when active)
   const handleGlobalCommand = async (payload: { text?: string; audio?: Blob }) => {
+    if (tailorMode && payload.text) {
+      await handleTailorToJob(payload.text);
+      return;
+    }
+
     if (attachedSelection) {
       setAiLoading(true);
       try {
@@ -265,7 +398,7 @@ export default function CareerCanvasPage() {
 
   // Accept a proposed diff into CareerProfile
   const handleAcceptDiff = (diff: PendingDiff) => {
-    setProfile((prev) => {
+    updateProfileWithHistory((prev) => {
       if (diff.targetType === 'summary') {
         return {
           ...prev,
@@ -397,17 +530,139 @@ export default function CareerCanvasPage() {
     }
   };
 
-  // Dim non-selected blocks when user highlights text (matching reference inspo)
+  const handleTailorToJob = async (jobDescription: string) => {
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/ai/tailor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile, jobDescription }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to analyze job description');
+        return;
+      }
+      setTailorReport(data.report);
+      if (data.diffs?.length) {
+        setPendingDiffs((prev) => [...data.diffs, ...prev]);
+      }
+      setTailorMode(false);
+      setInterviewOpen(false);
+      requestAnimationFrame(() => setTailorPanelOpen(true));
+      showToast(`${data.report.matchScore}% match — review grounded suggestions`);
+    } catch {
+      showToast('Network error analyzing job description');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const runInterviewTurn = async (
+    payload?: { text?: string; audio?: Blob },
+    baseTurns: InterviewTurn[] = interviewTurns
+  ) => {
+    setInterviewLoading(true);
+    let updatedTurns = baseTurns;
+    if (payload?.text) {
+      updatedTurns = [
+        ...baseTurns,
+        { id: `turn-${Date.now()}-c`, role: 'candidate', text: payload.text },
+      ];
+      setInterviewTurns(updatedTurns);
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('profile', JSON.stringify(profile));
+      formData.append(
+        'history',
+        JSON.stringify(baseTurns.map((t) => ({ role: t.role, text: t.text })))
+      );
+      if (payload?.text) formData.append('text', payload.text);
+      if (payload?.audio) formData.append('audio', payload.audio, 'answer.webm');
+
+      const res = await fetch('/api/ai/interview', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Mock interview error');
+        return;
+      }
+
+      if (payload?.audio && !payload?.text && data.transcript) {
+        updatedTurns = [
+          ...baseTurns,
+          { id: `turn-${Date.now()}-c`, role: 'candidate', text: data.transcript },
+        ];
+      }
+
+      const interviewerTurn: InterviewTurn = {
+        id: `turn-${Date.now()}-i`,
+        role: 'interviewer',
+        text: data.nextQuestion,
+        feedback: data.feedback,
+        diff: data.suggestedDiff,
+      };
+
+      setInterviewTurns([...updatedTurns, interviewerTurn]);
+      setInterviewDone(Boolean(data.done));
+    } catch {
+      showToast('Network error during mock interview');
+    } finally {
+      setInterviewLoading(false);
+    }
+  };
+
+  const handleOpenInterview = () => {
+    setTailorPanelOpen(false);
+    requestAnimationFrame(() => setInterviewOpen(true));
+  };
+
+  const handleRestartInterview = async () => {
+    setInterviewDone(false);
+    setInterviewTurns([]);
+    await runInterviewTurn(undefined, []);
+  };
+
+  // Smoothly scroll to the resume section/role the live interviewer is asking about
+  useEffect(() => {
+    if (!interviewFocusId) return;
+    const el =
+      document.querySelector<HTMLElement>(`[data-focus-id="${interviewFocusId}"]`) ||
+      document.querySelector<HTMLElement>(`[data-target-id="${interviewFocusId}"]`);
+    if (!el) return;
+
+    if (lenisRef?.current) {
+      lenisRef.current.scrollTo(el, { offset: -110, duration: 1.0 });
+    } else {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [interviewFocusId, lenisRef]);
+
+  // Dim non-selected blocks when user highlights text OR during live interview focus
   const dimClass = (targetId?: string) => {
+    if (interviewFocusId) {
+      const focusedExp = profile.experience.find((e) => e.id === interviewFocusId);
+      const isFocused =
+        targetId === interviewFocusId ||
+        Boolean(focusedExp?.bullets.some((b) => b.id === targetId));
+      return isFocused
+        ? 'opacity-100 transition-opacity duration-300'
+        : 'opacity-35 transition-opacity duration-300';
+    }
     if (!selection) return 'transition-opacity duration-200';
     return selection.targetId === targetId
       ? 'opacity-100 transition-opacity duration-200'
       : 'opacity-40 transition-opacity duration-200';
   };
 
+  const isDrawerOpen = (tailorPanelOpen && Boolean(tailorReport)) || interviewOpen;
+
   return (
     <main
-      className="min-h-screen pb-32 pt-12 px-4 sm:px-8 relative"
+      className={`min-h-screen pb-32 pt-16 px-4 sm:px-8 relative transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isDrawerOpen ? 'lg:pl-[416px]' : ''
+      }`}
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -472,6 +727,58 @@ export default function CareerCanvasPage() {
           </div>
         </div>
       )}
+      {/* Minimal Reader-Style Top Nav */}
+      <MinimalTopNav
+        viewMode={viewMode}
+        showLinter={showLinter}
+        issueCount={issueCount}
+        publishing={publishing}
+        onChangeViewMode={setViewMode}
+        onToggleLinter={() => setShowLinter((s) => !s)}
+        onImportClick={() => fileInputRef.current?.click()}
+        onOpenTailor={() => setTailorMode(true)}
+        onOpenInterview={handleOpenInterview}
+        onExportPdf={() => window.print()}
+        onPublishPortfolio={handlePublishPortfolio}
+      />
+
+      {/* Animated Left AI Canvas Panel (for Tailor analysis + diffs) */}
+      <TailorCanvasPanel
+        open={tailorPanelOpen}
+        report={tailorReport}
+        diffs={pendingDiffs.filter((d) => d.id.startsWith('diff-tailor-'))}
+        onClose={() => setTailorPanelOpen(false)}
+        onAcceptDiff={handleAcceptDiff}
+        onDiscardDiff={handleDiscardDiff}
+        onAcceptAll={() => {
+          const tailorDiffs = pendingDiffs.filter((d) => d.id.startsWith('diff-tailor-'));
+          tailorDiffs.forEach((d) => handleAcceptDiff(d));
+        }}
+      />
+
+      {/* Animated Left Mock Interview Drawer */}
+      <InterviewCanvasPanel
+        open={interviewOpen}
+        profile={profile}
+        loading={interviewLoading}
+        done={interviewDone}
+        turns={interviewTurns}
+        onClose={() => {
+          setInterviewOpen(false);
+          setInterviewFocusId(null);
+        }}
+        onClearTurns={() => setInterviewTurns([])}
+        onAppendTurn={(turn) => setInterviewTurns((prev) => [...prev, turn])}
+        onSubmitAnswer={(payload) => runInterviewTurn(payload)}
+        onAcceptDiff={handleAcceptDiff}
+        onDismissDiff={(turnId) =>
+          setInterviewTurns((prev) =>
+            prev.map((t) => (t.id === turnId ? { ...t, diff: undefined } : t))
+          )
+        }
+        onFocusSection={setInterviewFocusId}
+      />
+
       {/* Floating Selection Pill */}
       {selection && (
         <FloatingSelectionPill
@@ -494,7 +801,9 @@ export default function CareerCanvasPage() {
             type="button"
             onClick={() => cycleTemplate(-1)}
             title="Previous template"
-            className="no-print fixed left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-neutral-200/80 bg-white/85 backdrop-blur-md text-neutral-600 hover:text-neutral-900 hover:bg-white shadow-[0_6px_20px_rgba(15,23,42,0.08)] flex items-center justify-center transition hover:scale-105 active:scale-95 cursor-pointer"
+            className={`no-print fixed top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-neutral-200/80 bg-white/85 backdrop-blur-md text-neutral-600 hover:text-neutral-900 hover:bg-white shadow-[0_6px_20px_rgba(15,23,42,0.08)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+              isDrawerOpen ? 'left-4 sm:left-6 lg:left-[416px]' : 'left-4 sm:left-6'
+            }`}
           >
             <ChevronLeft className="w-5 h-5 stroke-[1.75]" />
           </button>
@@ -511,15 +820,49 @@ export default function CareerCanvasPage() {
 
       {/* Centered Pure Document Canvas */}
       <div className="mx-auto max-w-[800px]">
-        {viewMode === 'resume' && resumeTemplate === 'swiss' ? (
+        {viewMode === 'resume' && resumeTemplate === 'audrey' ? (
+          <AudreyTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={inlinePendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={updateProfileWithHistory}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              setSelection(sel);
+              handleInlineAi('rewrite');
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'olivera' ? (
+          <OliveraTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={inlinePendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={updateProfileWithHistory}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              setSelection(sel);
+              handleInlineAi('rewrite');
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'swiss' ? (
           <SwissTemplate
             profile={profile}
             showLinter={showLinter}
             diagnosticsByTarget={diagnosticsByTarget}
             activeDiagId={activeDiagId}
-            pendingDiffs={pendingDiffs}
+            pendingDiffs={inlinePendingDiffs}
             dimClass={dimClass}
-            onUpdateProfile={setProfile}
+            onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
               setSelection(sel);
@@ -534,9 +877,9 @@ export default function CareerCanvasPage() {
             showLinter={showLinter}
             diagnosticsByTarget={diagnosticsByTarget}
             activeDiagId={activeDiagId}
-            pendingDiffs={pendingDiffs}
+            pendingDiffs={inlinePendingDiffs}
             dimClass={dimClass}
-            onUpdateProfile={setProfile}
+            onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
               setSelection(sel);
@@ -551,9 +894,9 @@ export default function CareerCanvasPage() {
             showLinter={showLinter}
             diagnosticsByTarget={diagnosticsByTarget}
             activeDiagId={activeDiagId}
-            pendingDiffs={pendingDiffs}
+            pendingDiffs={inlinePendingDiffs}
             dimClass={dimClass}
-            onUpdateProfile={setProfile}
+            onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
               setSelection(sel);
@@ -568,9 +911,9 @@ export default function CareerCanvasPage() {
             showLinter={showLinter}
             diagnosticsByTarget={diagnosticsByTarget}
             activeDiagId={activeDiagId}
-            pendingDiffs={pendingDiffs}
+            pendingDiffs={inlinePendingDiffs}
             dimClass={dimClass}
-            onUpdateProfile={setProfile}
+            onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
               setSelection(sel);
@@ -616,32 +959,18 @@ export default function CareerCanvasPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div>
-                    <h1
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => {
-                        const next = e.currentTarget.textContent;
-                        if (next !== null) {
-                          setProfile((p) => ({ ...p, fullName: next || p.fullName }));
-                        }
-                      }}
-                      className="text-[26px] sm:text-[28px] font-medium tracking-tight text-neutral-900 leading-tight focus:outline-none"
-                    >
-                      {profile.fullName}
-                    </h1>
-                    <p
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => {
-                        const next = e.currentTarget.textContent;
-                        if (next !== null) {
-                          setProfile((p) => ({ ...p, headline: next || p.headline }));
-                        }
-                      }}
-                      className="text-[13px] italic text-neutral-500 mt-0.5 focus:outline-none"
-                    >
-                      {profile.headline}
-                    </p>
+                    <EditableField
+                      as="h1"
+                      value={profile.fullName}
+                      onCommit={(v) => updateProfileWithHistory((p) => ({ ...p, fullName: v }))}
+                      className="text-[26px] sm:text-[28px] font-medium tracking-tight text-neutral-900 leading-tight"
+                    />
+                    <EditableField
+                      as="p"
+                      value={profile.headline}
+                      onCommit={(v) => updateProfileWithHistory((p) => ({ ...p, headline: v }))}
+                      className="text-[13px] italic text-neutral-500 mt-0.5"
+                    />
                   </div>
 
                   {/* Right-aligned Contact Info */}
@@ -674,23 +1003,16 @@ export default function CareerCanvasPage() {
                 </div>
 
                 {/* Summary directly beneath header */}
-                <div className={`mt-3.5 ${dimClass('summary')}`}>
-                  <p
-                    contentEditable
-                    suppressContentEditableWarning
-                    data-editable-type="summary"
-                    data-target-id="summary"
-                    onBlur={(e) => {
-                      const next = e.currentTarget.textContent;
-                      if (next !== null) {
-                        setProfile((p) => ({ ...p, summary: next || p.summary }));
-                      }
-                    }}
-                    className="text-[11.5px] leading-[1.65] text-neutral-600 focus:outline-none"
-                  >
-                    {profile.summary}
-                  </p>
-                  {pendingDiffs
+                <div className={`relative mt-3.5 ${dimClass('summary')}`}>
+                  <EditableField
+                    as="p"
+                    value={profile.summary}
+                    dataEditableType="summary"
+                    dataTargetId="summary"
+                    onCommit={(v) => updateProfileWithHistory((p) => ({ ...p, summary: v }))}
+                    className="text-[11.5px] leading-[1.65] text-neutral-600"
+                  />
+                  {inlinePendingDiffs
                     .filter((d) => d.targetType === 'summary')
                     .map((d) => (
                       <DiffGhostCard
@@ -716,7 +1038,7 @@ export default function CareerCanvasPage() {
                   Experience
                 </h2>
 
-                {pendingDiffs
+                {inlinePendingDiffs
                   .filter((d) => d.targetType === 'add_experience')
                   .map((d) => (
                     <DiffGhostCard
@@ -729,7 +1051,7 @@ export default function CareerCanvasPage() {
 
                 <div className="space-y-5">
                   {profile.experience.map((exp) => (
-                    <div key={exp.id}>
+                    <div key={exp.id} data-focus-id={exp.id}>
                       <div className={dimClass(exp.id)}>
                         <div className="text-[11.5px] leading-snug flex flex-wrap items-baseline gap-x-1.5">
                           <EditableField
@@ -800,20 +1122,20 @@ export default function CareerCanvasPage() {
 
                           return (
                             <div key={bullet.id} className={`relative ${dimClass(bullet.id)}`}>
-                              <p
-                                contentEditable
-                                suppressContentEditableWarning
-                                data-editable-type="experience_bullet"
-                                data-parent-id={exp.id}
-                                data-target-id={bullet.id}
+                              <EditableField
+                                as="p"
+                                value={bullet.text}
+                                markClass={markClass}
+                                dataEditableType="experience_bullet"
+                                dataParentId={exp.id}
+                                dataTargetId={bullet.id}
                                 onClick={() => {
                                   if (topDiag && window.getSelection()?.isCollapsed) {
                                     setActiveDiagId(isDiagOpen ? null : bullet.id);
                                   }
                                 }}
-                                onBlur={(e) => {
-                                  const updated = e.currentTarget.textContent || bullet.text;
-                                  setProfile((p) => ({
+                                onCommit={(updated) =>
+                                  updateProfileWithHistory((p) => ({
                                     ...p,
                                     experience: p.experience.map((item) =>
                                       item.id !== exp.id
@@ -825,12 +1147,10 @@ export default function CareerCanvasPage() {
                                             ),
                                           }
                                     ),
-                                  }));
-                                }}
-                                className="text-[11px] leading-[1.65] text-neutral-600 focus:outline-none"
-                              >
-                                <span className={markClass}>{bullet.text}</span>
-                              </p>
+                                  }))
+                                }
+                                className="text-[11px] leading-[1.65] text-neutral-600"
+                              />
 
                               {isDiagOpen && topDiag && (
                                 <div className="no-print absolute left-0 top-full mt-1.5 z-30 w-72 rounded-2xl border border-neutral-200/80 bg-white/95 backdrop-blur-xl p-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
@@ -870,7 +1190,7 @@ export default function CareerCanvasPage() {
                                 </div>
                               )}
 
-                              {pendingDiffs
+                              {inlinePendingDiffs
                                 .filter((d) => d.targetId === bullet.id)
                                 .map((d) => (
                                   <DiffGhostCard
@@ -1226,10 +1546,15 @@ export default function CareerCanvasPage() {
         issueCount={issueCount}
         publishing={publishing}
         attachedSelection={attachedSelection}
+        tailorMode={tailorMode}
+        shiftedForDrawer={isDrawerOpen}
+        hideOnMobile={interviewOpen}
         onClearAttachedSelection={() => setAttachedSelection(null)}
+        onClearTailorMode={() => setTailorMode(false)}
         onChangeViewMode={setViewMode}
         onToggleLinter={() => setShowLinter((s) => !s)}
         onImportClick={() => fileInputRef.current?.click()}
+        onOpenTailor={() => setTailorMode(true)}
         onExportPdf={() => window.print()}
         onPublishPortfolio={handlePublishPortfolio}
         onSubmitCommand={handleGlobalCommand}
