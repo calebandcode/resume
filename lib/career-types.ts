@@ -1,9 +1,19 @@
+export interface BulletLintIssue {
+  severity: 'warning' | 'info' | 'verified';
+  title: string;
+  message: string;
+  suggestedAction?: string;
+  forText: string;
+}
+
 export interface ResumeBullet {
   id: string;
   text: string;
   /** Transcript snippet or user input that grounds this claim */
   sourceEvidence?: string;
   verified: boolean;
+  /** Optional contextual AI lint diagnostic attached on import */
+  lintIssue?: BulletLintIssue;
 }
 
 export interface ExperienceItem {
@@ -36,6 +46,7 @@ export interface EducationItem {
   school: string;
   degree: string;
   period: string;
+  location?: string;
   description?: string;
 }
 
@@ -846,4 +857,407 @@ export const AUDREY_PROFILE: CareerProfile = {
     'Technical Skills: SQL | MySQL | T-SQL | R | Python | MS Excel | Google Sheets | MS Office',
   ],
 };
+
+export const WSO_PROFILE: CareerProfile = {
+  fullName: 'THOMAS JAMES',
+  headline: 'Analyst – Project Finance Group',
+  addressLine1: '123 Washington St. Apt. #2',
+  location: 'New York, NY 10014',
+  phone: '646.123.4567',
+  email: 'Thomas.James@gmail.com',
+  summary: '',
+  experience: [
+    {
+      id: 'w-exp-1',
+      company: 'ABC Bank',
+      role: 'Analyst – Project Finance Group',
+      location: 'New York, NY',
+      period: 'June 2012 – Present',
+      bullets: [
+        {
+          id: 'w-b-1',
+          text: 'Involved in all aspects of transactions including initial due diligence, preparation of the CIM, modeling, presentations',
+          verified: false,
+        },
+        {
+          id: 'w-b-2',
+          text: 'Responsible for performing comparable companies and precedent transaction analyses in Excel',
+          verified: false,
+        },
+        {
+          id: 'w-b-3',
+          text: 'Produce daily group newsletter summarizing recent events in the industry',
+          verified: false,
+        },
+        {
+          id: 'w-b-4',
+          text: '$700 MM Transaction for Royal Energy (closed) – Responsibilities include monitoring the debt drawdown and its effect on covenant and credit agreement compliance',
+          sourceEvidence: '$700 MM Transaction for Royal Energy',
+          verified: true,
+        },
+        {
+          id: 'w-b-5',
+          text: '$500 MM Debt Financing for a Wind Farm Project (active) – Responsibilities include building a financial model to show debt financing under multiple capital structures, running sensitivity analysis to show the impact of various macroeconomic conditions, analyzing state regulations to determine project’s eligibility for subsidies and leading the production of marketing materials from design through printing',
+          sourceEvidence: '$500 MM Debt Financing for a Wind Farm Project',
+          verified: true,
+        },
+        {
+          id: 'w-b-6',
+          text: '$3 B Transaction for a Solar CSP Project (active) – Responsibilities include preparing pitchbook materials and follow-up on client feedback through the equity-raising process on the world’s largest solar CSP project',
+          sourceEvidence: '$3 B Transaction for a Solar CSP Project',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 'w-exp-2',
+      company: 'ZYX Energy Cooperative',
+      role: 'Research Analyst',
+      location: 'New York, NY',
+      period: 'June 2010 – June 2012',
+      bullets: [
+        {
+          id: 'w-b-7',
+          text: 'Analyzed and recommended specific investment opportunities to traders in natural gas, power and coal',
+          verified: false,
+        },
+        {
+          id: 'w-b-8',
+          text: 'Worked directly with traders to create and improve supply and demand models for natural gas, power, and coal',
+          verified: false,
+        },
+        {
+          id: 'w-b-9',
+          text: 'Sent out intraday research notes to traders in summarizing daily and weekly energy supply and demand data and news',
+          verified: false,
+        },
+      ],
+    },
+  ],
+  education: [
+    {
+      id: 'w-edu-1',
+      school: 'Washington University – Olin School of Business',
+      degree: 'Bachelor of Science in Business Administration; Finance Major',
+      location: 'St. Louis, MO',
+      period: 'Class of 2010',
+      description:
+        "Cumulative GPA: 3.5/4.0; Major GPA: 3.8/4.0\nGraduated magna cum laude; Dean's List all semesters\nRelevant Coursework: Financial Statement Analysis, Advanced Financial Management, M&A, Options, Futures & Derivatives, Introduction to Econometrics, International Finance, Investments, Mortgage Backed Securities",
+    },
+    {
+      id: 'w-edu-2',
+      school: 'Dalian University of Foreign Languages',
+      degree: 'School of Chinese Studies',
+      location: 'Dalian, Liaoning Province, China',
+      period: 'Jan 2009 – May 2009',
+    },
+  ],
+  projects: [
+    {
+      id: 'w-proj-1',
+      name: 'Washington University NCAA Soccer Team',
+      tagline: 'Captain',
+      tech: ['St. Louis, MO', 'Sep 2006 – Dec 2009'],
+      highlights: [
+        {
+          id: 'w-h-1',
+          text: 'Attended league meetings and organized all games and practices in lieu of coaching staff',
+          verified: false,
+        },
+        {
+          id: 'w-h-2',
+          text: 'Successfully recruited over 10 new players and developed an alumni support network via campaigns',
+          sourceEvidence: '10+ new players recruited',
+          verified: true,
+        },
+        {
+          id: 'w-h-3',
+          text: 'Led the team to an undefeated 2009 season within our division',
+          sourceEvidence: 'Undefeated 2009 season',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 'w-proj-2',
+      name: 'Washington University Student Investment Fund',
+      tagline: 'Founder and Co-President',
+      tech: ['St. Louis, MO', 'Oct 2008 – May 2010'],
+      highlights: [
+        {
+          id: 'w-h-4',
+          text: "Co-founded a student-run fund to invest a small portion of the University's endowment",
+          verified: false,
+        },
+        {
+          id: 'w-h-5',
+          text: 'Managed a $105k diversified, mid-cap equities fund which generated 27% growth over 18 months',
+          sourceEvidence: '$105k fund, 27% growth over 18 months',
+          verified: true,
+        },
+      ],
+    },
+  ],
+  skills: [
+    'Languages: Fluent in Mandarin, Basic Skills in French',
+    "Modeling: Completed ABC Bank's formal modeling program run by Wall Street Prep",
+    'Computer: Expert in Excel, PowerPoint, CapitalIQ, Bloomberg',
+    'Certifications: Completed Bloomberg Certification Program',
+  ],
+};
+
+export const LATEX_PROFILE: CareerProfile = {
+  fullName: 'Thomas James',
+  headline: 'Analyst – Project Finance & Quantitative Modeling',
+  location: 'New York, NY',
+  phone: '646.123.4567',
+  email: 'Thomas.James@gmail.com',
+  website: 'thomasjames.io',
+  github: 'github.com/tjames-quant',
+  linkedin: 'linkedin.com/in/thomasjames',
+  summary: '',
+  education: [
+    {
+      id: 'l-edu-1',
+      school: 'Washington University – Olin School of Business',
+      degree: 'Bachelor of Science in Business Administration (Finance Major)',
+      location: 'St. Louis, MO',
+      period: 'Sep 2006 – May 2010',
+      description:
+        'Cumulative GPA: 3.5/4.0; Major GPA: 3.8/4.0 · Magna Cum Laude, Dean’s List all semesters\nMain courses: Financial Statement Analysis, Advanced Financial Management, M&A, Options, Futures & Derivatives, Econometrics',
+    },
+    {
+      id: 'l-edu-2',
+      school: 'Dalian University of Foreign Languages',
+      degree: ' visiting Scholar – School of Chinese Studies',
+      location: 'Dalian, China',
+      period: 'Jan 2009 – May 2009',
+      description:
+        'Main courses: Intensive Mandarin Business Communication, East Asian Trade & Macroeconomics',
+    },
+  ],
+  experience: [
+    {
+      id: 'l-exp-1',
+      role: 'Analyst – Project Finance Group',
+      company: 'ABC Bank',
+      location: 'New York, NY',
+      period: 'June 2012 – Present',
+      bullets: [
+        {
+          id: 'l-b-1',
+          text: 'Built dynamic debt-financing model for a $500 MM Wind Farm Project across multiple capital structures and ran macroeconomic sensitivity analyses.',
+          sourceEvidence: '$500 MM Wind Farm Project debt financing model',
+          verified: true,
+        },
+        {
+          id: 'l-b-2',
+          text: 'Monitored debt drawdown, covenant compliance, and credit agreements on a closed $700 MM Transaction for Royal Energy.',
+          sourceEvidence: '$700 MM Royal Energy transaction',
+          verified: true,
+        },
+        {
+          id: 'l-b-3',
+          text: 'Prepared pitchbook materials and managed client equity-raising follow-up on a $3 B Solar CSP Project.',
+          sourceEvidence: '$3 B Solar CSP Project',
+          verified: true,
+        },
+        {
+          id: 'l-b-4',
+          text: 'Performed comparable company and precedent transaction analyses in Excel and produced daily industry research briefings.',
+          verified: false,
+        },
+      ],
+    },
+    {
+      id: 'l-exp-2',
+      role: 'Research Analyst',
+      company: 'ZYX Energy Cooperative',
+      location: 'New York, NY',
+      period: 'June 2010 – June 2012',
+      bullets: [
+        {
+          id: 'l-b-5',
+          text: 'Analyzed and recommended specific investment opportunities to institutional traders across natural gas, power, and coal markets.',
+          verified: false,
+        },
+        {
+          id: 'l-b-6',
+          text: 'Partnered directly with trading desk to build and calibrate supply-and-demand forecasting models and intraday research notes.',
+          verified: false,
+        },
+      ],
+    },
+  ],
+  projects: [
+    {
+      id: 'l-proj-1',
+      name: 'Washington University Student Investment Fund',
+      tagline: 'Founder & Co-President',
+      tech: ['Oct 2008 – May 2010'],
+      highlights: [
+        {
+          id: 'l-h-1',
+          text: 'Co-founded a student-run investment fund allocating a portion of the University endowment across mid-cap equities.',
+          verified: false,
+        },
+        {
+          id: 'l-h-2',
+          text: 'Managed a $105k diversified portfolio that delivered 27% return over an 18-month period.',
+          sourceEvidence: '$105k portfolio, 27% return over 18 months',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 'l-proj-2',
+      name: 'Washington University NCAA Soccer Team',
+      tagline: 'Team Captain',
+      tech: ['Sep 2006 – Dec 2009'],
+      highlights: [
+        {
+          id: 'l-h-3',
+          text: 'Recruited 10+ new players, built an alumni fundraising network, and led the squad to an undefeated 2009 division season.',
+          sourceEvidence: '10+ players recruited, undefeated 2009 season',
+          verified: true,
+        },
+      ],
+    },
+  ],
+  skills: [
+    "Financial Modeling: DCF, Project Finance, LBO, Sensitivity Analysis, Wall Street Prep (ABC Bank Program)",
+    'Analytics & Tools: Excel, PowerPoint, CapitalIQ, Bloomberg Terminal, Python, SQL, LaTeX',
+    'Communication: English (Native), Mandarin (Fluent), French (Basic)',
+    'Certifications: Bloomberg Market Concepts & Certification Program',
+  ],
+};
+
+export const TECH_ATS_PROFILE: CareerProfile = {
+  fullName: 'Jane Doe',
+  headline: 'Full Stack Developer',
+  location: 'San Francisco, CA, USA',
+  phone: '415.890.4421',
+  email: 'jane.doe@anymail.com',
+  website: 'jane-doe.com',
+  linkedin: 'linkedin.com/in/janedoe',
+  github: 'github.com/janedoe',
+  summary:
+    'Full-stack web developer with over 3 years of experience building responsive web applications in HTML, CSS, JavaScript, TypeScript, and PHP. Experienced across React, Angular, Vue.js, RESTful APIs, and scalable MVC backends.',
+  summaryEvidence: 'Jane Doe Full Stack Developer template',
+  skills: [
+    'Languages: JavaScript, TypeScript, PHP, Java, HTML, CSS',
+    'Frameworks: React.js, Angular, Express, Node.js, Next.js',
+    'Libraries: Material UI, Redux, React Router, Tailwind CSS',
+    'Databases: MongoDB, PostgreSQL, MySQL, Redis',
+    'Dev Tools: Visual Studio Code, Git, GitLab, Docker, GitHub Actions',
+  ],
+  experience: [
+    {
+      id: 'jd-exp-1',
+      role: 'Web Developer',
+      company: 'Vanguard Digital',
+      location: 'Remote – San Francisco, CA',
+      period: 'Apr 2022 – Present',
+      bullets: [
+        {
+          id: 'jd-b-1',
+          text: 'Designed and developed dynamic, responsive web applications using HTML, CSS, JavaScript, React, and PHP.',
+          verified: false,
+        },
+        {
+          id: 'jd-b-2',
+          text: 'Architected REST APIs to retrieve and synchronize real-time customer data across PostgreSQL and MongoDB databases.',
+          verified: false,
+        },
+        {
+          id: 'jd-b-3',
+          text: 'Improved website performance and page load speed by 55% through code-splitting, caching, and bundle optimization.',
+          sourceEvidence: '55% website performance and speed improvement',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 'jd-exp-2',
+      role: 'Backend Developer',
+      company: 'CloudScale Systems',
+      location: 'San Francisco, CA',
+      period: 'Aug 2021 – Nov 2022',
+      bullets: [
+        {
+          id: 'jd-b-4',
+          text: 'Built modular MVC backend services in Node.js and Express to power core customer workflows.',
+          verified: false,
+        },
+        {
+          id: 'jd-b-5',
+          text: 'Troubleshot and resolved critical production bottlenecks in the backend to ensure 99.9% uptime across services.',
+          sourceEvidence: '99.9% uptime across services',
+          verified: true,
+        },
+      ],
+    },
+    {
+      id: 'jd-exp-3',
+      role: 'Backend Developer Intern',
+      company: 'CloudScale Systems',
+      location: 'San Francisco, CA',
+      period: 'Jan 2021 – Aug 2021',
+      bullets: [
+        {
+          id: 'jd-b-6',
+          text: 'Collaborated with senior engineers in the design and delivery of responsive client portals using HTML, CSS, and JavaScript.',
+          verified: false,
+        },
+      ],
+    },
+  ],
+  education: [
+    {
+      id: 'jd-edu-1',
+      school: 'University of California, Berkeley',
+      degree: 'Bachelor of Science in Computer Science',
+      location: 'Berkeley, CA',
+      period: 'Jan 2016 – Dec 2020',
+    },
+  ],
+  projects: [
+    {
+      id: 'jd-proj-1',
+      name: 'CommercePulse Storefront',
+      tagline: 'Full-stack e-commerce platform & CI/CD pipeline',
+      tech: ['React.js', 'Redux', 'PHP', 'MySQL', 'Git'],
+      link: 'github.com/janedoe/commerce-pulse',
+      highlights: [
+        {
+          id: 'jd-h-1',
+          text: 'Designed and developed a clean, modern storefront using HTML, CSS, JavaScript, and React.',
+          verified: false,
+        },
+        {
+          id: 'jd-h-2',
+          text: 'Optimized storefront rendering for speed, responsive design, and cross-device compatibility, deployed via GitHub Actions.',
+          verified: false,
+        },
+      ],
+    },
+    {
+      id: 'jd-proj-2',
+      name: 'TaskFlow REST API',
+      tagline: 'Scalable CRUD microservice backend',
+      tech: ['Node.js', 'Express', 'JavaScript', 'Git'],
+      link: 'github.com/janedoe/taskflow-api',
+      highlights: [
+        {
+          id: 'jd-h-3',
+          text: 'Built a CRUD application exposed via a RESTful API in Node.js supporting POST, GET, PATCH, and DELETE HTTP methods in Express.',
+          verified: false,
+        },
+      ],
+    },
+  ],
+};
+
+
+
 

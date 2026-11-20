@@ -223,11 +223,11 @@ export function ModernTemplate({
                                 item.id !== exp.id
                                   ? item
                                   : {
-                                      ...item,
-                                      bullets: item.bullets.map((b) =>
-                                        b.id === bullet.id ? { ...b, text: updated } : b
-                                      ),
-                                    }
+                                    ...item,
+                                    bullets: item.bullets.map((b) =>
+                                      b.id === bullet.id ? { ...b, text: updated } : b
+                                    ),
+                                  }
                               ),
                             }))
                           }

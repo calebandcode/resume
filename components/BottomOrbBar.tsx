@@ -6,12 +6,9 @@ import {
   Mic,
   Square,
   ArrowUp,
-  ChevronDown,
   Loader2,
   Upload,
   Download,
-  Globe,
-  Check,
   X,
   CornerDownRight,
   Target,
@@ -21,50 +18,41 @@ import type { SelectionContext } from './FloatingSelectionPill';
 interface BottomOrbBarProps {
   loading: boolean;
   statusNote?: string | null;
-  viewMode: 'resume' | 'portfolio';
   showLinter: boolean;
   issueCount: number;
-  publishing: boolean;
   attachedSelection?: SelectionContext | null;
   tailorMode: boolean;
   shiftedForDrawer?: boolean;
   hideOnMobile?: boolean;
   onClearAttachedSelection: () => void;
   onClearTailorMode: () => void;
-  onChangeViewMode: (mode: 'resume' | 'portfolio') => void;
   onToggleLinter: () => void;
   onImportClick: () => void;
   onOpenTailor: () => void;
   onExportPdf: () => void;
-  onPublishPortfolio: () => void;
   onSubmitCommand: (payload: { text?: string; audio?: Blob }) => Promise<void>;
 }
 
 export function BottomOrbBar({
   loading,
   statusNote,
-  viewMode,
   showLinter,
   issueCount,
-  publishing,
   attachedSelection,
   tailorMode,
   shiftedForDrawer = false,
   hideOnMobile = false,
   onClearAttachedSelection,
   onClearTailorMode,
-  onChangeViewMode,
   onToggleLinter,
   onImportClick,
   onOpenTailor,
   onExportPdf,
-  onPublishPortfolio,
   onSubmitCommand,
 }: BottomOrbBarProps) {
   const [text, setText] = useState('');
   const [recording, setRecording] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
-  const [modeOpen, setModeOpen] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -195,52 +183,6 @@ export function BottomOrbBar({
             <Download className="w-4 h-4 text-neutral-500" />
             Export PDF
           </button>
-
-          <button
-            type="button"
-            disabled={publishing}
-            onClick={() => {
-              setPlusOpen(false);
-              onPublishPortfolio();
-            }}
-            className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] text-neutral-700 hover:bg-neutral-100 transition cursor-pointer text-left disabled:opacity-50"
-          >
-            <Globe className="w-4 h-4 text-neutral-500" />
-            {publishing ? 'Publishing...' : 'Publish Portfolio'}
-          </button>
-        </div>
-
-        {/* Mode Selector Popover ("Resume" / "Portfolio") */}
-        <div
-          aria-hidden={!modeOpen}
-          className={`absolute bottom-16 right-12 z-50 w-44 rounded-2xl border border-neutral-200/80 bg-white/95 backdrop-blur-xl p-1.5 shadow-[0_12px_36px_rgba(15,23,42,0.12)] origin-bottom-right transition-all duration-200 ease-out ${
-            modeOpen
-              ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
-          }`}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              onChangeViewMode('resume');
-              setModeOpen(false);
-            }}
-            className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-[13px] text-neutral-800 hover:bg-neutral-100 transition cursor-pointer"
-          >
-            <span>Resume</span>
-            {viewMode === 'resume' && <Check className="w-3.5 h-3.5 text-neutral-900" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onChangeViewMode('portfolio');
-              setModeOpen(false);
-            }}
-            className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-[13px] text-neutral-800 hover:bg-neutral-100 transition cursor-pointer"
-          >
-            <span>Portfolio</span>
-            {viewMode === 'portfolio' && <Check className="w-3.5 h-3.5 text-neutral-900" />}
-          </button>
         </div>
 
         {/* Gemini-Style Input Card */}
@@ -277,7 +219,6 @@ export function BottomOrbBar({
                 onChange={(e) => setText(e.target.value)}
                 onFocus={() => {
                   setPlusOpen(false);
-                  setModeOpen(false);
                 }}
                 disabled={loading}
                 placeholder="Paste the job description to tailor your resume..."
@@ -288,11 +229,10 @@ export function BottomOrbBar({
                   <button
                     type="button"
                     onClick={() => {
-                      setModeOpen(false);
                       setPlusOpen((v) => !v);
                     }}
                     className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition cursor-pointer shrink-0"
-                    title="Import CV, Linter, Export & Publish"
+                    title="Import CV, Linter & Export"
                   >
                     <Plus
                       className={`w-5 h-5 stroke-[1.75] transition-transform duration-200 ease-out ${
@@ -317,18 +257,6 @@ export function BottomOrbBar({
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    type="button"
-                    onClick={() => {
-                      setPlusOpen(false);
-                      setModeOpen((v) => !v);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[13.5px] font-medium text-neutral-700 hover:bg-neutral-100 transition cursor-pointer shrink-0"
-                  >
-                    <span>{viewMode === 'resume' ? 'Resume' : 'Portfolio'}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
-                  </button>
-
-                  <button
                     type="submit"
                     disabled={loading || !text.trim()}
                     className="w-9 h-9 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white flex items-center justify-center disabled:opacity-35 transition cursor-pointer shrink-0"
@@ -348,11 +276,10 @@ export function BottomOrbBar({
           <button
             type="button"
             onClick={() => {
-              setModeOpen(false);
               setPlusOpen((v) => !v);
             }}
             className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition cursor-pointer shrink-0"
-            title="Import CV, Linter, Export & Publish"
+            title="Import CV, Linter & Export"
           >
             <Plus
               className={`w-5 h-5 stroke-[1.75] transition-transform duration-200 ease-out ${
@@ -368,7 +295,6 @@ export function BottomOrbBar({
             onChange={(e) => setText(e.target.value)}
             onFocus={() => {
               setPlusOpen(false);
-              setModeOpen(false);
             }}
             disabled={loading}
             placeholder={
@@ -376,24 +302,10 @@ export function BottomOrbBar({
                 ? 'Listening... tap mic to finish'
                 : attachedSelection
                   ? 'How should we refine this?'
-                  : viewMode === 'portfolio'
-                    ? 'Speak or ask to update your portfolio...'
-                    : 'Speak or ask to update your resume...'
+                  : 'Speak or ask to update your resume...'
             }
             className="flex-1 bg-transparent text-[15px] text-neutral-800 placeholder:text-neutral-500 focus:outline-none px-1"
           />
-
-          <button
-            type="button"
-            onClick={() => {
-              setPlusOpen(false);
-              setModeOpen((v) => !v);
-            }}
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[13.5px] font-medium text-neutral-700 hover:bg-neutral-100 transition cursor-pointer shrink-0"
-          >
-            <span>{viewMode === 'resume' ? 'Resume' : 'Portfolio'}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
-          </button>
 
           {text.trim() ? (
             <button

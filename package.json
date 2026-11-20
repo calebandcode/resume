@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.121",
-    "@google/genai": "^3.6.0",
     "@upstash/redis": "^1.41.0",
     "ai": "^7.0.173",
     "lucide-react": "^1.73.0",

@@ -27,9 +27,16 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       duration: 1.1,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
+      autoResize: true,
     });
 
     lenisRef.current = instance;
+
+    const ro = new ResizeObserver(() => {
+      instance.resize();
+    });
+    ro.observe(document.body);
+    ro.observe(document.documentElement);
 
     let rafId: number;
     function raf(time: number) {
@@ -39,6 +46,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     rafId = requestAnimationFrame(raf);
 
     return () => {
+      ro.disconnect();
       cancelAnimationFrame(rafId);
       instance.destroy();
       lenisRef.current = null;

@@ -53,7 +53,8 @@ STRICT RESPONSIBLE-AI RULES:
 1. NEVER invent, add, or imply skills, tools, years of experience, or metrics that are NOT already in the CareerProfile.
 2. Put genuine missing requirements in \`missingKeywords\`—do NOT sneak them into \`diffs\`.
 3. Only propose \`diffs\` (up to 4 high-impact surgical edits) that reframe or emphasize EXISTING facts using relevant JD terminology.
-4. For every diff, match the exact \`targetId\` (e.g. "summary" or bullet id) and \`parentId\` (experience id for bullets) from the CareerProfile JSON.`,
+4. For every diff, match the exact \`targetId\` (e.g. "summary" or bullet id) and \`parentId\` (experience id for bullets) from the CareerProfile JSON.
+5. For \`targetType: "summary"\`, either set \`originalText\` to the exact sentence/phrase in \`profile.summary\` being replaced (or empty string \`""\` if appending a new sentence), OR include the complete updated summary in \`proposedText\` with the full \`profile.summary\` in \`originalText\`. Never replace a multi-sentence summary with just one fragment.`,
       prompt: `Job Description:
 ${jobDescription}
 

@@ -28,9 +28,9 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: 'Aura — Voice-First Career Canvas',
+  title: 'Résumé — Defend & Tailor Your Resume Out Loud',
   description:
-    'A calm, monochrome-first AI canvas for building grounded ATS resumes and live portfolios.',
+    'Drop your CV, spot weak claims with the Truth Linter, defend your experience in a live Gemini voice mock interview, and ship a tailored ATS resume.',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

@@ -25,6 +25,9 @@ import {
   SWISS_PROFILE,
   OLIVERA_PROFILE,
   AUDREY_PROFILE,
+  WSO_PROFILE,
+  LATEX_PROFILE,
+  TECH_ATS_PROFILE,
   PendingDiff,
   LinterDiagnostic,
 } from '@/lib/career-types';
@@ -39,6 +42,9 @@ import { ModernTemplate } from '@/components/templates/ModernTemplate';
 import { SwissTemplate } from '@/components/templates/SwissTemplate';
 import { OliveraTemplate } from '@/components/templates/OliveraTemplate';
 import { AudreyTemplate } from '@/components/templates/AudreyTemplate';
+import { WsoTemplate } from '@/components/templates/WsoTemplate';
+import { LatexTemplate } from '@/components/templates/LatexTemplate';
+import { TechAtsTemplate } from '@/components/templates/TechAtsTemplate';
 import { TailorCanvasPanel, TailorReport } from '@/components/TailorCanvasPanel';
 import { InterviewCanvasPanel, InterviewTurn } from '@/components/InterviewCanvasPanel';
 import { MinimalTopNav } from '@/components/MinimalTopNav';
@@ -46,6 +52,9 @@ import { useLenis } from '@/components/providers/smooth-scroll-provider';
 
 type ViewMode = 'resume' | 'portfolio';
 type ResumeTemplate =
+  | 'wso'
+  | 'latex'
+  | 'tech-ats'
   | 'minimalist'
   | 'editorial'
   | 'executive'
@@ -57,10 +66,10 @@ type ResumeTemplate =
 const STORAGE_KEY = 'aura-career-canvas-v1';
 
 export default function CareerCanvasPage() {
-  const [profile, setProfile] = useState<CareerProfile>(EXECUTIVE_PROFILE);
+  const [profile, setProfile] = useState<CareerProfile>(WSO_PROFILE);
   const [hasCustomProfile, setHasCustomProfile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('resume');
-  const [resumeTemplate, setResumeTemplate] = useState<ResumeTemplate>('executive');
+  const [resumeTemplate, setResumeTemplate] = useState<ResumeTemplate>('wso');
   const [hydrated, setHydrated] = useState(false);
   const [showLinter, setShowLinter] = useState(true);
   const [activeDiagId, setActiveDiagId] = useState<string | null>(null);
@@ -85,14 +94,26 @@ export default function CareerCanvasPage() {
 
   // Hydrate saved canvas state from localStorage after mount
   useEffect(() => {
+    const allowedTemplates: ResumeTemplate[] = ['wso', 'latex', 'tech-ats'];
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.profile) setProfile(parsed.profile);
-        if (parsed.resumeTemplate) setResumeTemplate(parsed.resumeTemplate);
+        const isAllowedTpl = allowedTemplates.includes(parsed.resumeTemplate);
+        const nextTpl: ResumeTemplate = isAllowedTpl ? parsed.resumeTemplate : 'wso';
+        setResumeTemplate(nextTpl);
         if (typeof parsed.hasCustomProfile === 'boolean') {
           setHasCustomProfile(parsed.hasCustomProfile);
+        }
+        if (parsed.hasCustomProfile && parsed.profile) {
+          setProfile(parsed.profile);
+        } else {
+          const starterMap: Record<string, CareerProfile> = {
+            wso: WSO_PROFILE,
+            latex: LATEX_PROFILE,
+            'tech-ats': TECH_ATS_PROFILE,
+          };
+          setProfile(starterMap[nextTpl] || WSO_PROFILE);
         }
       }
     } catch {
@@ -153,33 +174,22 @@ export default function CareerCanvasPage() {
     }, 4500);
   }, []);
 
-  const TEMPLATES: ResumeTemplate[] = [
-    'executive',
-    'editorial',
-    'modern',
-    'minimalist',
-    'swiss',
-    'olivera',
-    'audrey',
-  ];
+  const TEMPLATES: ResumeTemplate[] = ['wso', 'latex', 'tech-ats'];
 
   const cycleTemplate = (dir: -1 | 1) => {
     const idx = TEMPLATES.indexOf(resumeTemplate);
-    const nextTpl = TEMPLATES[(idx + dir + TEMPLATES.length) % TEMPLATES.length];
+    const safeIdx = idx === -1 ? 0 : idx;
+    const nextTpl = TEMPLATES[(safeIdx + dir + TEMPLATES.length) % TEMPLATES.length];
     setResumeTemplate(nextTpl);
     setSelection(null);
     setActiveDiagId(null);
     if (!hasCustomProfile) {
-      const starterMap: Record<ResumeTemplate, CareerProfile> = {
-        minimalist: INITIAL_PROFILE,
-        editorial: CLASSIC_PROFILE,
-        executive: EXECUTIVE_PROFILE,
-        modern: MODERN_PROFILE,
-        swiss: SWISS_PROFILE,
-        olivera: OLIVERA_PROFILE,
-        audrey: AUDREY_PROFILE,
+      const starterMap: Record<string, CareerProfile> = {
+        wso: WSO_PROFILE,
+        latex: LATEX_PROFILE,
+        'tech-ats': TECH_ATS_PROFILE,
       };
-      setProfile(starterMap[nextTpl]);
+      setProfile(starterMap[nextTpl] || WSO_PROFILE);
     }
   };
 
@@ -292,19 +302,23 @@ export default function CareerCanvasPage() {
     document.execCommand(cmd, false);
   };
 
-  // Inline AI action from FloatingSelectionPill
+  // Inline AI action from FloatingSelectionPill or Truth Linter "Sharpen with AI"
   const handleInlineAi = async (
     action: 'quantify' | 'rewrite' | 'punchy' | 'custom',
-    options?: { instruction?: string; audio?: Blob }
+    options?: { instruction?: string; audio?: Blob; selectionOverride?: SelectionContext }
   ) => {
-    if (!selection) return;
+    const targetSel = options?.selectionOverride || selection;
+    if (!targetSel) return;
     setAiLoading(true);
+    if (options?.selectionOverride) {
+      showToast('Sharpening with AI...');
+    }
     try {
       const formData = new FormData();
-      formData.append('selectedText', selection.text);
-      formData.append('targetType', selection.targetType);
-      if (selection.parentId) formData.append('parentId', selection.parentId);
-      if (selection.targetId) formData.append('targetId', selection.targetId);
+      formData.append('selectedText', targetSel.text);
+      formData.append('targetType', targetSel.targetType);
+      if (targetSel.parentId) formData.append('parentId', targetSel.parentId);
+      if (targetSel.targetId) formData.append('targetId', targetSel.targetId);
       formData.append('action', action);
       if (options?.instruction) formData.append('instruction', options.instruction);
       if (options?.audio) formData.append('audio', options.audio, 'voice.webm');
@@ -385,8 +399,62 @@ export default function CareerCanvasPage() {
         return;
       }
 
+      if (data.directPatch) {
+        const dp = data.directPatch;
+        updateProfileWithHistory((prev) => {
+          const next: CareerProfile = {
+            ...prev,
+            ...(dp.fullName ? { fullName: dp.fullName } : {}),
+            ...(dp.headline ? { headline: dp.headline } : {}),
+            ...(dp.location ? { location: dp.location } : {}),
+            ...(dp.email ? { email: dp.email } : {}),
+            ...(dp.phone ? { phone: dp.phone } : {}),
+            ...(dp.addSkills?.length
+              ? { skills: Array.from(new Set([...prev.skills, ...dp.addSkills])) }
+              : {}),
+          };
+          if (dp.addBulletToExperience?.bulletText) {
+            const targetExpId =
+              dp.addBulletToExperience.experienceId || prev.experience[0]?.id;
+            next.experience = prev.experience.map((exp) =>
+              exp.id !== targetExpId
+                ? exp
+                : {
+                    ...exp,
+                    bullets: [
+                      ...exp.bullets,
+                      {
+                        id: `b-${Date.now()}`,
+                        text: dp.addBulletToExperience.bulletText,
+                        sourceEvidence: payload.text || 'Voice/text command',
+                        verified: true,
+                      },
+                    ],
+                  }
+            );
+          }
+          return next;
+        });
+      }
+
       if (data.diffs?.length) {
         setPendingDiffs((prev) => [...data.diffs, ...prev]);
+        const first = data.diffs[0];
+        const focusTarget = first.targetId || first.parentId;
+        if (focusTarget) {
+          requestAnimationFrame(() => {
+            const el =
+              document.querySelector<HTMLElement>(`[data-target-id="${focusTarget}"]`) ||
+              document.querySelector<HTMLElement>(`[data-focus-id="${focusTarget}"]`);
+            if (el) {
+              if (lenisRef?.current) {
+                lenisRef.current.scrollTo(el, { offset: -120, duration: 0.9 });
+              } else {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }
+          });
+        }
       }
       showToast(data.assistantNote || 'Proposed updates ready on canvas');
     } catch {
@@ -396,60 +464,91 @@ export default function CareerCanvasPage() {
     }
   };
 
+  // Smartly apply a diff so partial-sentence edits or additions don't wipe out the rest of a summary/bullet
+  const applyTextDiff = (currentText: string, originalText: string, proposedText: string): string => {
+    const curr = currentText.trim();
+    const orig = (originalText || '').trim();
+    const prop = (proposedText || '').trim();
+    if (!prop) return currentText;
+    if (!curr) return prop;
+
+    // 1. Exact substring match (e.g. replacing 1 phrase or 1 sentence inside a multi-sentence summary)
+    if (orig && curr.includes(orig)) {
+      return curr.replace(orig, prop);
+    }
+
+    // 2. Case-insensitive substring match
+    if (orig) {
+      const idx = curr.toLowerCase().indexOf(orig.toLowerCase());
+      if (idx !== -1) {
+        return curr.slice(0, idx) + prop + curr.slice(idx + orig.length);
+      }
+    }
+
+    // 3. Pure addition (no originalText provided) -> append cleanly
+    if (!orig) {
+      if (curr.toLowerCase().includes(prop.toLowerCase())) return curr;
+      const needsPeriod = !/[.!?]$/.test(curr);
+      return `${curr}${needsPeriod ? '.' : ''} ${prop}`;
+    }
+
+    // 4. If currentText is a multi-sentence paragraph and proposedText is just a single short sentence addition
+    const currSentences = curr.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const propSentences = prop.split(/(?<=[.!?])\s+/).filter(Boolean);
+    if (currSentences.length >= 2 && propSentences.length === 1 && curr.length > prop.length * 1.6) {
+      const needsPeriod = !/[.!?]$/.test(curr);
+      return `${curr}${needsPeriod ? '.' : ''} ${prop}`;
+    }
+
+    return prop;
+  };
+
   // Accept a proposed diff into CareerProfile
   const handleAcceptDiff = (diff: PendingDiff) => {
     updateProfileWithHistory((prev) => {
       if (diff.targetType === 'summary') {
         return {
           ...prev,
-          summary: diff.proposedText,
+          summary: applyTextDiff(prev.summary, diff.originalText, diff.proposedText),
           summaryEvidence: diff.sourceEvidence,
         };
       }
 
-      if (diff.targetType === 'experience_bullet' && diff.parentId && diff.targetId) {
+      if (diff.targetType === 'experience_bullet' && diff.targetId) {
         return {
           ...prev,
-          experience: prev.experience.map((exp) =>
-            exp.id !== diff.parentId
-              ? exp
-              : {
-                  ...exp,
-                  bullets: exp.bullets.map((b) =>
-                    b.id !== diff.targetId
-                      ? b
-                      : {
-                          ...b,
-                          text: diff.proposedText,
-                          sourceEvidence: diff.sourceEvidence,
-                          verified: true,
-                        }
-                  ),
-                }
-          ),
+          experience: prev.experience.map((exp) => ({
+            ...exp,
+            bullets: exp.bullets.map((b) =>
+              b.id !== diff.targetId
+                ? b
+                : {
+                    ...b,
+                    text: applyTextDiff(b.text, diff.originalText, diff.proposedText),
+                    sourceEvidence: diff.sourceEvidence,
+                    verified: true,
+                  }
+            ),
+          })),
         };
       }
 
-      if (diff.targetType === 'project_highlight' && diff.parentId && diff.targetId) {
+      if (diff.targetType === 'project_highlight' && diff.targetId) {
         return {
           ...prev,
-          projects: prev.projects.map((proj) =>
-            proj.id !== diff.parentId
-              ? proj
-              : {
-                  ...proj,
-                  highlights: proj.highlights.map((h) =>
-                    h.id !== diff.targetId
-                      ? h
-                      : {
-                          ...h,
-                          text: diff.proposedText,
-                          sourceEvidence: diff.sourceEvidence,
-                          verified: true,
-                        }
-                  ),
-                }
-          ),
+          projects: prev.projects.map((proj) => ({
+            ...proj,
+            highlights: proj.highlights.map((h) =>
+              h.id !== diff.targetId
+                ? h
+                : {
+                    ...h,
+                    text: applyTextDiff(h.text, diff.originalText, diff.proposedText),
+                    sourceEvidence: diff.sourceEvidence,
+                    verified: true,
+                  }
+            ),
+          })),
         };
       }
 
@@ -520,7 +619,7 @@ export default function CareerCanvasPage() {
       }
       setPublishedUrl(data.url);
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        navigator.clipboard.writeText(`${window.location.origin}${data.url}`).catch(() => {});
+        navigator.clipboard.writeText(`${window.location.origin}${data.url}`).catch(() => { });
       }
       showToast(`Published live at ${data.url} (link copied)`);
     } catch {
@@ -639,6 +738,14 @@ export default function CareerCanvasPage() {
     }
   }, [interviewFocusId, lenisRef]);
 
+  // Recalculate Lenis scroll bounds after template switches or content updates
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      lenisRef?.current?.resize();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [resumeTemplate, profile, pendingDiffs, lenisRef]);
+
   // Dim non-selected blocks when user highlights text OR during live interview focus
   const dimClass = (targetId?: string) => {
     if (interviewFocusId) {
@@ -660,9 +767,8 @@ export default function CareerCanvasPage() {
 
   return (
     <main
-      className={`min-h-screen pb-32 pt-16 px-4 sm:px-8 relative transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isDrawerOpen ? 'lg:pl-[416px]' : ''
-      }`}
+      className={`min-h-screen pb-48 pt-16 px-4 sm:px-8 relative transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isDrawerOpen ? 'lg:pl-[416px]' : ''
+        }`}
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -729,17 +835,10 @@ export default function CareerCanvasPage() {
       )}
       {/* Minimal Reader-Style Top Nav */}
       <MinimalTopNav
-        viewMode={viewMode}
-        showLinter={showLinter}
-        issueCount={issueCount}
-        publishing={publishing}
-        onChangeViewMode={setViewMode}
-        onToggleLinter={() => setShowLinter((s) => !s)}
         onImportClick={() => fileInputRef.current?.click()}
         onOpenTailor={() => setTailorMode(true)}
         onOpenInterview={handleOpenInterview}
         onExportPdf={() => window.print()}
-        onPublishPortfolio={handlePublishPortfolio}
       />
 
       {/* Animated Left AI Canvas Panel (for Tailor analysis + diffs) */}
@@ -801,9 +900,8 @@ export default function CareerCanvasPage() {
             type="button"
             onClick={() => cycleTemplate(-1)}
             title="Previous template"
-            className={`no-print fixed top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-neutral-200/80 bg-white/85 backdrop-blur-md text-neutral-600 hover:text-neutral-900 hover:bg-white shadow-[0_6px_20px_rgba(15,23,42,0.08)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-              isDrawerOpen ? 'left-4 sm:left-6 lg:left-[416px]' : 'left-4 sm:left-6'
-            }`}
+            className={`no-print fixed top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-neutral-200/80 bg-white/85 backdrop-blur-md text-neutral-600 hover:text-neutral-900 hover:bg-white shadow-[0_6px_20px_rgba(15,23,42,0.08)] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${isDrawerOpen ? 'left-4 sm:left-6 lg:left-[416px]' : 'left-4 sm:left-6'
+              }`}
           >
             <ChevronLeft className="w-5 h-5 stroke-[1.75]" />
           </button>
@@ -819,8 +917,56 @@ export default function CareerCanvasPage() {
       )}
 
       {/* Centered Pure Document Canvas */}
-      <div className="mx-auto max-w-[800px]">
-        {viewMode === 'resume' && resumeTemplate === 'audrey' ? (
+      <div data-resume-canvas className="mx-auto max-w-[800px]">
+        {viewMode === 'resume' && resumeTemplate === 'wso' ? (
+          <WsoTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={inlinePendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={updateProfileWithHistory}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              handleInlineAi('rewrite', { selectionOverride: sel });
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'latex' ? (
+          <LatexTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={inlinePendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={updateProfileWithHistory}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              handleInlineAi('rewrite', { selectionOverride: sel });
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'tech-ats' ? (
+          <TechAtsTemplate
+            profile={profile}
+            showLinter={showLinter}
+            diagnosticsByTarget={diagnosticsByTarget}
+            activeDiagId={activeDiagId}
+            pendingDiffs={inlinePendingDiffs}
+            dimClass={dimClass}
+            onUpdateProfile={updateProfileWithHistory}
+            onSetActiveDiagId={setActiveDiagId}
+            onQuickRewrite={(sel) => {
+              handleInlineAi('rewrite', { selectionOverride: sel });
+            }}
+            onAcceptDiff={handleAcceptDiff}
+            onDiscardDiff={handleDiscardDiff}
+          />
+        ) : viewMode === 'resume' && resumeTemplate === 'audrey' ? (
           <AudreyTemplate
             profile={profile}
             showLinter={showLinter}
@@ -831,8 +977,7 @@ export default function CareerCanvasPage() {
             onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
-              setSelection(sel);
-              handleInlineAi('rewrite');
+              handleInlineAi('rewrite', { selectionOverride: sel });
             }}
             onAcceptDiff={handleAcceptDiff}
             onDiscardDiff={handleDiscardDiff}
@@ -848,8 +993,7 @@ export default function CareerCanvasPage() {
             onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
-              setSelection(sel);
-              handleInlineAi('rewrite');
+              handleInlineAi('rewrite', { selectionOverride: sel });
             }}
             onAcceptDiff={handleAcceptDiff}
             onDiscardDiff={handleDiscardDiff}
@@ -865,8 +1009,7 @@ export default function CareerCanvasPage() {
             onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
-              setSelection(sel);
-              handleInlineAi('rewrite');
+              handleInlineAi('rewrite', { selectionOverride: sel });
             }}
             onAcceptDiff={handleAcceptDiff}
             onDiscardDiff={handleDiscardDiff}
@@ -882,8 +1025,7 @@ export default function CareerCanvasPage() {
             onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
-              setSelection(sel);
-              handleInlineAi('rewrite');
+              handleInlineAi('rewrite', { selectionOverride: sel });
             }}
             onAcceptDiff={handleAcceptDiff}
             onDiscardDiff={handleDiscardDiff}
@@ -899,8 +1041,7 @@ export default function CareerCanvasPage() {
             onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
-              setSelection(sel);
-              handleInlineAi('rewrite');
+              handleInlineAi('rewrite', { selectionOverride: sel });
             }}
             onAcceptDiff={handleAcceptDiff}
             onDiscardDiff={handleDiscardDiff}
@@ -916,8 +1057,7 @@ export default function CareerCanvasPage() {
             onUpdateProfile={updateProfileWithHistory}
             onSetActiveDiagId={setActiveDiagId}
             onQuickRewrite={(sel) => {
-              setSelection(sel);
-              handleInlineAi('rewrite');
+              handleInlineAi('rewrite', { selectionOverride: sel });
             }}
             onAcceptDiff={handleAcceptDiff}
             onDiscardDiff={handleDiscardDiff}
@@ -1141,11 +1281,11 @@ export default function CareerCanvasPage() {
                                       item.id !== exp.id
                                         ? item
                                         : {
-                                            ...item,
-                                            bullets: item.bullets.map((b) =>
-                                              b.id === bullet.id ? { ...b, text: updated } : b
-                                            ),
-                                          }
+                                          ...item,
+                                          bullets: item.bullets.map((b) =>
+                                            b.id === bullet.id ? { ...b, text: updated } : b
+                                          ),
+                                        }
                                     ),
                                   }))
                                 }
@@ -1173,14 +1313,15 @@ export default function CareerCanvasPage() {
                                     type="button"
                                     onClick={() => {
                                       setActiveDiagId(null);
-                                      setSelection({
-                                        text: bullet.text,
-                                        targetType: 'experience_bullet',
-                                        parentId: exp.id,
-                                        targetId: bullet.id,
-                                        rect: { top: 220, left: window.innerWidth / 2 },
+                                      handleInlineAi('rewrite', {
+                                        selectionOverride: {
+                                          text: bullet.text,
+                                          targetType: 'experience_bullet',
+                                          parentId: exp.id,
+                                          targetId: bullet.id,
+                                          rect: { top: 220, left: window.innerWidth / 2 },
+                                        },
                                       });
-                                      handleInlineAi('rewrite');
                                     }}
                                     className="mt-2 inline-flex items-center gap-1 rounded-full bg-neutral-900 text-white px-2.5 py-1 text-[11px] font-medium hover:bg-neutral-800 cursor-pointer"
                                   >
@@ -1312,13 +1453,13 @@ export default function CareerCanvasPage() {
                   {(profile.references && profile.references.length > 0
                     ? profile.references
                     : [
-                        {
-                          id: 'ref-default',
-                          name: 'Available upon request',
-                          title: '',
-                          contact: '',
-                        },
-                      ]
+                      {
+                        id: 'ref-default',
+                        name: 'Available upon request',
+                        title: '',
+                        contact: '',
+                      },
+                    ]
                   ).map((ref) => (
                     <div key={ref.id}>
                       <div className="text-[11.5px] flex flex-wrap items-baseline gap-x-1.5">
@@ -1541,22 +1682,18 @@ export default function CareerCanvasPage() {
       <BottomOrbBar
         loading={aiLoading}
         statusNote={statusNote}
-        viewMode={viewMode}
         showLinter={showLinter}
         issueCount={issueCount}
-        publishing={publishing}
         attachedSelection={attachedSelection}
         tailorMode={tailorMode}
         shiftedForDrawer={isDrawerOpen}
         hideOnMobile={interviewOpen}
         onClearAttachedSelection={() => setAttachedSelection(null)}
         onClearTailorMode={() => setTailorMode(false)}
-        onChangeViewMode={setViewMode}
         onToggleLinter={() => setShowLinter((s) => !s)}
         onImportClick={() => fileInputRef.current?.click()}
         onOpenTailor={() => setTailorMode(true)}
         onExportPdf={() => window.print()}
-        onPublishPortfolio={handlePublishPortfolio}
         onSubmitCommand={handleGlobalCommand}
       />
     </main>

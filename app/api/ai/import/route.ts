@@ -4,11 +4,37 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CareerProfile } from '@/lib/career-types';
 
+const ImportedBulletSchema = z.object({
+  text: z.string(),
+  evaluation: z
+    .enum(['strong', 'warning', 'info'])
+    .describe(
+      '"strong" if specific and well-scoped; "warning" if passive, vague, or pure duty description; "info" if a good action bullet that is missing concrete scale, stack, or outcome.'
+    ),
+  diagnosticTitle: z
+    .string()
+    .describe(
+      'Required specific 2-5 word title about THIS bullet (e.g. "Missing website traffic or stack", "Unclear API scale", "Duty instead of delivery outcome"). Do NOT use generic titles.'
+    ),
+  diagnosticMessage: z
+    .string()
+    .describe(
+      'Required 1-sentence critique talking directly about the specific subject of THIS bullet (e.g. "You mention designing the organisation\'s public website, but not the tech stack used, launch timeline, or visitor impact."). NEVER reuse the same sentence template across bullets.'
+    ),
+  suggestedAction: z
+    .string()
+    .describe(
+      'Specific follow-up question for THIS bullet (e.g. "What stack did you build it with, and what changed after launch?").'
+    ),
+});
+
 const ImportedProfileSchema = z.object({
   fullName: z.string(),
   headline: z.string().describe('Short professional title, e.g. Full-Stack Engineer'),
   location: z.string(),
   email: z.string(),
+  phone: z.string().optional(),
+  linkedin: z.string().optional(),
   website: z.string().optional(),
   github: z.string().optional(),
   summary: z.string(),
@@ -18,7 +44,7 @@ const ImportedProfileSchema = z.object({
       company: z.string(),
       location: z.string(),
       period: z.string(),
-      bullets: z.array(z.string()),
+      bullets: z.array(ImportedBulletSchema),
     })
   ),
   projects: z.array(
@@ -27,7 +53,7 @@ const ImportedProfileSchema = z.object({
       tagline: z.string(),
       tech: z.array(z.string()),
       link: z.string().optional(),
-      highlights: z.array(z.string()),
+      highlights: z.array(ImportedBulletSchema),
     })
   ),
   education: z.array(
@@ -76,8 +102,13 @@ export async function POST(req: Request) {
     const { object } = await generateObject({
       model: google('gemini-2.5-flash'),
       schema: ImportedProfileSchema,
-      system:
-        'You are an accurate CV parser. Extract all information faithfully from the uploaded PDF or image without inventing skills, metrics, or roles that are not present.',
+      system: `You are an accurate CV parser and Truth Linter.
+1. Extract all information faithfully from the uploaded PDF or image without inventing skills, metrics, or roles that are not present.
+2. For each experience bullet and project highlight, evaluate whether it has a genuine weakness:
+   - "warning": Passive opener ("Responsible for", "Worked on", "Helped"), pure job-duty description with no outcome, or vague filler claims.
+   - "info": Good action verb, but missing concrete scope, scale, or measurable result.
+   - null: Already strong, specific, and well-scoped or quantified.
+3. CRITICAL: Every lintIssue.message MUST be tailored to the exact topic of that bullet (e.g. "You mention building the payment API, but not the transaction volume or latency improvement"). NEVER repeat generic boilerplate across bullets.`,
       messages: [
         {
           role: 'user',
@@ -101,6 +132,8 @@ export async function POST(req: Request) {
       headline: object.headline,
       location: object.location,
       email: object.email,
+      phone: object.phone,
+      linkedin: object.linkedin,
       website: object.website,
       github: object.github,
       summary: object.summary,
@@ -113,9 +146,21 @@ export async function POST(req: Request) {
         period: exp.period,
         bullets: exp.bullets.map((b, bIdx) => ({
           id: `b-${now}-${idx}-${bIdx}`,
-          text: b,
+          text: b.text,
           sourceEvidence: `Imported from ${file.name}`,
-          verified: true,
+          verified: b.evaluation === 'strong',
+          lintIssue: {
+            severity:
+              b.evaluation === 'strong'
+                ? 'verified'
+                : b.evaluation === 'warning'
+                  ? 'warning'
+                  : 'info',
+            title: b.diagnosticTitle || (b.evaluation === 'strong' ? 'Grounded claim' : 'Needs concrete scope'),
+            message: b.diagnosticMessage,
+            suggestedAction: b.evaluation === 'strong' ? undefined : b.suggestedAction,
+            forText: b.text,
+          },
         })),
       })),
       projects: object.projects.map((proj, idx) => ({
@@ -126,9 +171,21 @@ export async function POST(req: Request) {
         link: proj.link,
         highlights: proj.highlights.map((h, hIdx) => ({
           id: `ph-${now}-${idx}-${hIdx}`,
-          text: h,
+          text: h.text,
           sourceEvidence: `Imported from ${file.name}`,
-          verified: true,
+          verified: h.evaluation === 'strong',
+          lintIssue: {
+            severity:
+              h.evaluation === 'strong'
+                ? 'verified'
+                : h.evaluation === 'warning'
+                  ? 'warning'
+                  : 'info',
+            title: h.diagnosticTitle || (h.evaluation === 'strong' ? 'Grounded claim' : 'Needs concrete scope'),
+            message: h.diagnosticMessage,
+            suggestedAction: h.evaluation === 'strong' ? undefined : h.suggestedAction,
+            forText: h.text,
+          },
         })),
       })),
       education: object.education.map((edu, idx) => ({

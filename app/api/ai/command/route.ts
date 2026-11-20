@@ -44,6 +44,25 @@ const DiffSchema = z.object({
         .optional(),
     })
   ),
+  directPatch: z
+    .object({
+      fullName: z.string().optional(),
+      headline: z.string().optional(),
+      location: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      addSkills: z.array(z.string()).optional(),
+      addBulletToExperience: z
+        .object({
+          experienceId: z.string(),
+          bulletText: z.string(),
+        })
+        .optional(),
+    })
+    .optional()
+    .describe(
+      'Use for direct metadata/header updates (name, headline, email, phone, location), adding skills, or adding a brand-new bullet to an existing experience item.'
+    ),
 });
 
 export async function POST(req: Request) {
@@ -72,9 +91,11 @@ Given the user's current CareerProfile JSON and their new voice note or text ins
 RULES:
 1. NEVER fabricate metrics, percentages, user counts, or technologies the user did not state.
 2. If the user's input lacks a number, improve the action verb and clarity without inventing numbers.
-3. For modifying existing items, match the exact \`targetId\` (bullet id) and \`parentId\` (experience or project id) from the CareerProfile JSON.
-4. For adding a new role or project, use \`targetType: "add_experience"\` or \`"add_project"\` and populate \`newExperience\` or \`newProject\`.
-5. Keep \`assistantNote\` under 18 words.
+3. For modifying existing items, match the exact \`targetId\` (bullet id, or "summary") and \`parentId\` (experience or project id) from the CareerProfile JSON.
+4. For \`targetType: "summary"\`, either set \`originalText\` to the exact sentence/phrase being replaced, or include the full updated summary in \`proposedText\`.
+5. For adding a new role or project, use \`targetType: "add_experience"\` or \`"add_project"\` and populate \`newExperience\` or \`newProject\`.
+6. If the user asks to change their name, headline/title, email, phone, location, add skills, or add a new bullet to an existing experience role, populate \`directPatch\`.
+7. Keep \`assistantNote\` under 18 words.
 
 Current CareerProfile JSON:
 ${JSON.stringify(profile, null, 2)}`;
@@ -113,51 +134,85 @@ ${JSON.stringify(profile, null, 2)}`;
     });
 
     const now = Date.now();
-    const normalizedDiffs = object.diffs.map((d, idx) => ({
-      id: `diff-${now}-${idx}`,
-      targetType: d.targetType,
-      parentId: d.parentId,
-      targetId: d.targetId,
-      originalText: d.originalText,
-      proposedText: d.proposedText,
-      reason: d.reason,
-      sourceEvidence: d.sourceEvidence,
-      newExperience: d.newExperience
-        ? {
-            id: `exp-${now}-${idx}`,
-            role: d.newExperience.role,
-            company: d.newExperience.company,
-            location: d.newExperience.location,
-            period: d.newExperience.period,
-            bullets: d.newExperience.bullets.map((b, bIdx) => ({
-              id: `b-${now}-${idx}-${bIdx}`,
-              text: b,
-              sourceEvidence: d.sourceEvidence,
-              verified: true,
-            })),
+    const normalizedDiffs = object.diffs.map((d, idx) => {
+      let resolvedParentId = d.parentId;
+      let resolvedTargetId = d.targetType === 'summary' ? 'summary' : d.targetId;
+
+      if (d.targetType === 'experience_bullet') {
+        const allBullets = profile.experience.flatMap((exp) =>
+          exp.bullets.map((b) => ({ expId: exp.id, bullet: b }))
+        );
+        const exactById = allBullets.find((item) => item.bullet.id === resolvedTargetId);
+        if (exactById) {
+          resolvedParentId = exactById.expId;
+          resolvedTargetId = exactById.bullet.id;
+        } else if (d.originalText) {
+          const origLower = d.originalText.trim().toLowerCase();
+          const byText = allBullets.find(
+            (item) =>
+              item.bullet.text.toLowerCase().includes(origLower) ||
+              origLower.includes(item.bullet.text.toLowerCase())
+          );
+          if (byText) {
+            resolvedParentId = byText.expId;
+            resolvedTargetId = byText.bullet.id;
           }
-        : undefined,
-      newProject: d.newProject
-        ? {
-            id: `proj-${now}-${idx}`,
-            name: d.newProject.name,
-            tagline: d.newProject.tagline,
-            tech: d.newProject.tech,
-            link: d.newProject.link,
-            highlights: d.newProject.highlights.map((h, hIdx) => ({
-              id: `ph-${now}-${idx}-${hIdx}`,
-              text: h,
-              sourceEvidence: d.sourceEvidence,
-              verified: true,
-            })),
+        }
+        if (!resolvedTargetId && resolvedParentId) {
+          const parentExp = profile.experience.find((e) => e.id === resolvedParentId);
+          if (parentExp?.bullets[0]) {
+            resolvedTargetId = parentExp.bullets[0].id;
           }
-        : undefined,
-    }));
+        }
+      }
+
+      return {
+        id: `diff-${now}-${idx}`,
+        targetType: d.targetType,
+        parentId: resolvedParentId,
+        targetId: resolvedTargetId,
+        originalText: d.originalText,
+        proposedText: d.proposedText,
+        reason: d.reason,
+        sourceEvidence: d.sourceEvidence,
+        newExperience: d.newExperience
+          ? {
+              id: `exp-${now}-${idx}`,
+              role: d.newExperience.role,
+              company: d.newExperience.company,
+              location: d.newExperience.location,
+              period: d.newExperience.period,
+              bullets: d.newExperience.bullets.map((b, bIdx) => ({
+                id: `b-${now}-${idx}-${bIdx}`,
+                text: b,
+                sourceEvidence: d.sourceEvidence,
+                verified: true,
+              })),
+            }
+          : undefined,
+        newProject: d.newProject
+          ? {
+              id: `proj-${now}-${idx}`,
+              name: d.newProject.name,
+              tagline: d.newProject.tagline,
+              tech: d.newProject.tech,
+              link: d.newProject.link,
+              highlights: d.newProject.highlights.map((h, hIdx) => ({
+                id: `ph-${now}-${idx}-${hIdx}`,
+                text: h,
+                sourceEvidence: d.sourceEvidence,
+                verified: true,
+              })),
+            }
+          : undefined,
+      };
+    });
 
     return NextResponse.json({
       assistantNote: object.assistantNote,
       transcript: object.transcript,
       diffs: normalizedDiffs,
+      directPatch: object.directPatch,
     });
   } catch (err) {
     console.error('AI command error:', err);

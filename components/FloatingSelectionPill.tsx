@@ -1,7 +1,6 @@
 'use client';
 
 import { Bold, Italic, Underline, Wand2, TrendingUp, Scissors } from 'lucide-react';
-import { AiOrb } from './AiOrb';
 
 export interface SelectionContext {
   text: string;
@@ -39,18 +38,10 @@ export function FloatingSelectionPill({
       className="no-print fixed z-50 -translate-x-1/2 flex flex-col items-center gap-2"
     >
       <div className="flex items-center gap-1.5 rounded-full border border-white/80 bg-white/90 backdrop-blur-xl px-2 py-1.5 shadow-[0_12px_40px_rgba(15,23,42,0.12),0_2px_6px_rgba(15,23,42,0.06)]">
-        {/* Glowing Orb — attaches selection to main input */}
-        <AiOrb
-          size="sm"
-          loading={loading}
-          onClick={() => onAttachToInput(selection)}
-          title="Ask AI about this selection"
-        />
-
         <button
           type="button"
           onClick={() => onAttachToInput(selection)}
-          className="px-2.5 py-1 rounded-full text-[12px] font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80 transition cursor-pointer"
+          className="px-2.5 py-1 rounded-full text-[12px] font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100/80 transition cursor-pointer"
         >
           Ask AI
         </button>
